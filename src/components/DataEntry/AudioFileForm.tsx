@@ -123,10 +123,12 @@ export default function AudioFileForm({ onSuccess, onCancel }: AudioFileFormProp
   const onSubmit = async (data: AudioFileFormData) => {
     setIsSubmitting(true);
     try {
-      // Convert minutes and seconds to interval format
+      // Convert minutes and seconds to PostgreSQL interval format
       const minutes = parseInt(data.مدة_التسجيل_دقائق.toString()) || 0;
       const seconds = parseInt(data.مدة_التسجيل_ثواني.toString()) || 0;
-      const totalSeconds = minutes * 60 + seconds;
+      
+      // Format as PostgreSQL interval: PT#M#S (ISO 8601 duration format)
+      const intervalString = `PT${minutes}M${seconds}S`;
       
       // Convert keywords, people, and places to arrays
       const keywords = data.الكلمات_المفتاحية.split(',').map(k => k.trim()).filter(k => k);
@@ -141,7 +143,7 @@ export default function AudioFileForm({ onSuccess, onCancel }: AudioFileFormProp
         مسار_الملف: data.مسار_الملف,
         نوع_الملف: data.نوع_الملف,
         حجم_الملف: data.حجم_الملف || undefined,
-        مدة_التسجيل: `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, '0')}`,
+        مدة_التسجيل: intervalString, // Use PostgreSQL interval format
         جودة_التسجيل: data.جودة_التسجيل,
         معرف_الشخص: data.معرف_الشخص || undefined,
         معرف_المرأة: data.معرف_المرأة || undefined,

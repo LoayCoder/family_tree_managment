@@ -1,141 +1,161 @@
-import { createClient } from '@supabase/supabase-js';
-import { FamilyMember, FamilyMemberWithLevel } from '../types/FamilyMember';
+// Re-export the consolidated Supabase client and services from arabicFamilyService
+export { supabase, arabicFamilyService as familyService } from './arabicFamilyService';
 
-// Check if environment variables are properly set
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Only create client if both URL and key are provided and valid
-let supabase: any = null;
-
-if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY') {
-  try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-  } catch (error) {
-    console.error('Failed to create Supabase client:', error);
-  }
+// Legacy compatibility types - map to Arabic service types
+export interface FamilyMember {
+  id: string;
+  name: string;
+  parent_id?: string | null;
+  birth_date?: string | null;
+  gender?: 'ذكر' | 'أنثى' | null;
+  phone?: string | null;
+  notes?: string | null;
+  is_alive?: boolean;
+  date_of_death?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  level?: number;
 }
 
-export { supabase };
+export interface FamilyMemberWithLevel extends FamilyMember {
+  level: number;
+  children_count?: number;
+}
 
-export const familyService = {
-  // Add a new family member
+// Adapter functions to maintain compatibility with existing components
+export const legacyFamilyService = {
   async addMember(memberData: Omit<FamilyMember, 'id' | 'created_at' | 'updated_at'>) {
+    const { supabase } = await import('./arabicFamilyService');
+    
     if (!supabase) {
-      throw new Error('Supabase client not initialized. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      throw new Error('Supabase client not initialized');
     }
 
-    const { data, error } = await supabase
-      .from('family_members')
-      .insert([{
-        ...memberData,
-        parent_id: memberData.parent_id || null,
-        birth_date: memberData.birth_date || null,
-        gender: memberData.gender || null,
-        phone: memberData.phone || null,
-        notes: memberData.notes || null,
-        is_alive: memberData.is_alive ?? true,
-        date_of_death: memberData.date_of_death || null,
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  // Get all family members
-  async getAllMembers(): Promise<FamilyMember[]> {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
-    }
-
-    const { data, error } = await supabase
-      .from('family_members')
-      .select('*')
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  // Get family tree with levels using recursive CTE
-  async getFamilyTree(): Promise<FamilyMemberWithLevel[]> {
-    if (!supabase) {
-      console.warn('Supabase client not initialized. Returning empty array.');
-      return [];
-    }
-
-    const { data, error } = await supabase.rpc('get_family_tree');
-
-    if (error) {
-      console.error('Error fetching family tree:', error);
-      // Fallback to simple query if RPC function doesn't exist
-      return this.getFamilyTreeFallback();
-    }
-
-    return data || [];
-  },
-
-  // Fallback method to build family tree manually
-  async getFamilyTreeFallback(): Promise<FamilyMemberWithLevel[]> {
-    if (!supabase) {
-      return [];
-    }
-
-    const members = await this.getAllMembers();
-    const membersWithLevel: FamilyMemberWithLevel[] = [];
-
-    // Function to calculate level recursively
-    const calculateLevel = (member: FamilyMember, visited = new Set()): number => {
-      if (visited.has(member.id)) return 0; // Prevent infinite recursion
-      visited.add(member.id);
-
-      if (!member.parent_id) return 0;
-      
-      const parent = members.find(m => m.id === member.parent_id);
-      if (!parent) return 0;
-      
-      return calculateLevel(parent, visited) + 1;
+    // Convert legacy format to Arabic format
+    const arabicMemberData = {
+      الاسم_الأول: memberData.name,
+      father_id: memberData.parent_id ? parseInt(memberData.parent_id) : null,
+      تاريخ_الميلاد: memberData.birth_date || null,
+      الجنس: memberData.gender || null,
+      ملاحظات: memberData.notes || null,
+      تاريخ_الوفاة: memberData.date_of_death || null,
     };
 
-    // Calculate levels for all members
-    members.forEach(member => {
-      const level = calculateLevel(member);
-      membersWithLevel.push({ ...member, level });
-    });
-
-    return membersWithLevel.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, 'ar'));
-  },
-
-  // Update a family member
-  async updateMember(id: string, updates: Partial<FamilyMember>) {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
-    }
-
     const { data, error } = await supabase
-      .from('family_members')
-      .update(updates)
-      .eq('id', id)
+      .from('الأشخاص')
+      .insert([arabicMemberData])
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Convert back to legacy format
+    return {
+      id: data.id.toString(),
+      name: data.الاسم_الأول,
+      parent_id: data.father_id?.toString() || null,
+      birth_date: data.تاريخ_الميلاد,
+      gender: data.الجنس,
+      notes: data.ملاحظات,
+      is_alive: !data.تاريخ_الوفاة,
+      date_of_death: data.تاريخ_الوفاة,
+      created_at: data.تاريخ_الإنشاء,
+      updated_at: data.تاريخ_التحديث
+    };
   },
 
-  // Delete a family member
-  async deleteMember(id: string) {
+  async getAllMembers(): Promise<FamilyMember[]> {
+    const { arabicFamilyService } = await import('./arabicFamilyService');
+    const persons = await arabicFamilyService.getAllPersons();
+    
+    return persons.map(person => ({
+      id: person.id.toString(),
+      name: person.الاسم_الأول,
+      parent_id: person.father_id?.toString() || null,
+      birth_date: person.تاريخ_الميلاد,
+      gender: person.الجنس,
+      notes: person.ملاحظات,
+      is_alive: !person.تاريخ_الوفاة,
+      date_of_death: person.تاريخ_الوفاة,
+      created_at: person.تاريخ_الإنشاء,
+      updated_at: person.تاريخ_التحديث
+    }));
+  },
+
+  async getFamilyTree(): Promise<FamilyMemberWithLevel[]> {
+    const { arabicFamilyService } = await import('./arabicFamilyService');
+    const personsWithDetails = await arabicFamilyService.getPersonsWithDetails();
+    
+    return personsWithDetails.map(person => ({
+      id: person.id.toString(),
+      name: person.الاسم_الكامل || person.الاسم_الأول,
+      parent_id: person.father_id?.toString() || null,
+      birth_date: person.تاريخ_الميلاد,
+      gender: person.الجنس,
+      notes: person.ملاحظات,
+      is_alive: !person.تاريخ_الوفاة,
+      date_of_death: person.تاريخ_الوفاة,
+      created_at: person.تاريخ_الإنشاء,
+      updated_at: person.تاريخ_التحديث,
+      level: person.مستوى_الجيل || 0
+    }));
+  },
+
+  async updateMember(id: string, updates: Partial<FamilyMember>) {
+    const { supabase } = await import('./arabicFamilyService');
+    
     if (!supabase) {
-      throw new Error('Supabase client not initialized. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+      throw new Error('Supabase client not initialized');
+    }
+
+    // Convert legacy format to Arabic format
+    const arabicUpdates: any = {};
+    if (updates.name) arabicUpdates.الاسم_الأول = updates.name;
+    if (updates.parent_id !== undefined) arabicUpdates.father_id = updates.parent_id ? parseInt(updates.parent_id) : null;
+    if (updates.birth_date !== undefined) arabicUpdates.تاريخ_الميلاد = updates.birth_date;
+    if (updates.gender !== undefined) arabicUpdates.الجنس = updates.gender;
+    if (updates.notes !== undefined) arabicUpdates.ملاحظات = updates.notes;
+    if (updates.date_of_death !== undefined) arabicUpdates.تاريخ_الوفاة = updates.date_of_death;
+
+    const { data, error } = await supabase
+      .from('الأشخاص')
+      .update(arabicUpdates)
+      .eq('id', parseInt(id))
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Convert back to legacy format
+    return {
+      id: data.id.toString(),
+      name: data.الاسم_الأول,
+      parent_id: data.father_id?.toString() || null,
+      birth_date: data.تاريخ_الميلاد,
+      gender: data.الجنس,
+      notes: data.ملاحظات,
+      is_alive: !data.تاريخ_الوفاة,
+      date_of_death: data.تاريخ_الوفاة,
+      created_at: data.تاريخ_الإنشاء,
+      updated_at: data.تاريخ_التحديث
+    };
+  },
+
+  async deleteMember(id: string) {
+    const { supabase } = await import('./arabicFamilyService');
+    
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
     }
 
     const { error } = await supabase
-      .from('family_members')
+      .from('الأشخاص')
       .delete()
-      .eq('id', id);
+      .eq('id', parseInt(id));
 
     if (error) throw error;
   }
 };
+
+// Export the legacy service as the default familyService for backward compatibility
+export const familyService = legacyFamilyService;
