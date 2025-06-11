@@ -129,7 +129,7 @@ function App() {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">حسابك قيد المراجعة</h2>
           
           <p className="text-gray-600 mb-6">
-            شكراً لتسجيلك في نظام شجرة العائلة. حسابك قيد المراجعة حالياً من قبل مدير النظام.
+            شكراً لتسجيلك في نظام شجرة آل عمير. حسابك قيد المراجعة حالياً من قبل مدير النظام.
             سيتم إعلامك عبر البريد الإلكتروني عند الموافقة على حسابك.
           </p>
           
@@ -157,7 +157,7 @@ function App() {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">تم رفض طلب حسابك</h2>
           
           <p className="text-gray-600 mb-6">
-            عذراً، تم رفض طلب إنشاء حسابك في نظام شجرة العائلة.
+            عذراً، تم رفض طلب إنشاء حسابك في نظام شجرة آل عمير.
             يرجى التواصل مع مدير النظام للحصول على مزيد من المعلومات.
           </p>
           
@@ -208,7 +208,7 @@ function App() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  شجرة العائلة
+                  شجرة آل عمير
                 </h1>
                 <p className="text-gray-600 text-sm">نظام إدارة الأنساب والعائلات</p>
               </div>
@@ -256,7 +256,7 @@ function App() {
         {/* Welcome Section */}
         <div className="text-center py-6">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">
-            أهلاً وسهلاً بكم في شجرة العائلة
+            أهلاً وسهلاً بكم في شجرة آل عمير
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             احتفظ بتاريخ عائلتك وأنسابها في مكان واحد آمن ومنظم، 
@@ -302,7 +302,7 @@ function App() {
               }`}
             >
               <TreePine className="w-5 h-5" />
-              شجرة العائلة
+              شجرة آل عمير
             </button>
             
             <button
@@ -314,7 +314,7 @@ function App() {
               }`}
             >
               <Heart className="w-5 h-5" />
-              دليل العائلة
+              دليل آل عمير
             </button>
           </div>
         </div>
@@ -348,7 +348,7 @@ function App() {
           <div className="text-center text-gray-600">
             <p className="flex items-center justify-center gap-2">
               <TreePine className="w-5 h-5" />
-              شجرة العائلة - حافظ على تراث عائلتك
+              شجرة آل عمير - حافظ على تراث عائلتك
               <Heart className="w-4 h-4 text-red-500 fill-current" />
             </p>
           </div>

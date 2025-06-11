@@ -98,7 +98,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-lg font-medium text-gray-600">جاري تحميل شجرة العائلة...</span>
+            <span className="text-lg font-medium text-gray-600">جاري تحميل شجرة آل عمير...</span>
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           <TreePine className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">شجرة العائلة</h2>
+          <h2 className="text-2xl font-bold text-gray-800">شجرة آل عمير</h2>
           <p className="text-gray-600">عدد الأعضاء: {members.length}</p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="البحث عن عضو في العائلة..."
+            placeholder="البحث عن عضو في آل عمير..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
@@ -153,7 +153,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         <div className="text-center py-12">
           <TreePine className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-600 mb-2">لا توجد أعضاء</h3>
-          <p className="text-gray-500">ابدأ بإضافة أعضاء جدد لبناء شجرة العائلة</p>
+          <p className="text-gray-500">ابدأ بإضافة أعضاء جدد لبناء شجرة آل عمير</p>
         </div>
       ) : (
         <div className="space-y-8">

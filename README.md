@@ -1,4 +1,4 @@
-# Arabic Family Tree System - نظام شجرة العائلة العربية
+# Arabic Family Tree System - نظام شجرة آل عمير العربية
 
 A comprehensive Arabic family tree management system built with React, TypeScript, and Supabase. This system provides advanced genealogy management with hierarchical structure, geographic branches, and national ID support.
 
@@ -203,7 +203,7 @@ npm run dev
 ### Adding a Root Family
 ```typescript
 await arabicFamilyService.addPerson({
-  الاسم_الأول: 'آل النجدي',
+  الاسم_الأول: 'آل عمير',
   is_root: true,
   تاريخ_الميلاد: '1800-01-01',
   معرف_الفرع: 1,
@@ -279,4 +279,4 @@ For support and questions, please open an issue on GitHub or contact the develop
 
 ---
 
-**نظام شجرة العائلة العربية** - حافظ على تراث عائلتك للأجيال القادمة
+**نظام شجرة آل عمير** - حافظ على تراث قبيلتك للأجيال القادمة

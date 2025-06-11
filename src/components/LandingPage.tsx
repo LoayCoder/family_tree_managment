@@ -18,7 +18,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  شجرة العائلة
+                  شجرة آل عمير
                 </h1>
                 <p className="text-gray-600 text-sm">نظام إدارة الأنساب والعائلات</p>
               </div>
@@ -49,13 +49,13 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-6xl font-bold text-gray-800 mb-6 leading-tight">
-              احتفظ بتاريخ عائلتك
+              احتفظ بتاريخ آل عمير
               <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                 للأجيال القادمة
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-              نظام شامل ومتطور لإدارة شجرة العائلة والأنساب، يساعدك على توثيق تاريخ عائلتك 
+              نظام شامل ومتطور لإدارة شجرة آل عمير والأنساب، يساعدك على توثيق تاريخ قبيلتك 
               وحفظ ذكرياتكم وقصصكم في مكان واحد آمن ومنظم
             </p>
             
@@ -89,7 +89,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               مميزات النظام
             </h3>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              نظام متكامل يوفر جميع الأدوات اللازمة لإدارة شجرة العائلة بطريقة احترافية
+              نظام متكامل يوفر جميع الأدوات اللازمة لإدارة شجرة آل عمير بطريقة احترافية
             </p>
           </div>
 
@@ -99,9 +99,9 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               <div className="p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl w-fit mb-6">
                 <TreePine className="w-8 h-8 text-white" />
               </div>
-              <h4 className="text-2xl font-bold text-gray-800 mb-4">شجرة العائلة التفاعلية</h4>
+              <h4 className="text-2xl font-bold text-gray-800 mb-4">شجرة آل عمير التفاعلية</h4>
               <p className="text-gray-600 leading-relaxed">
-                عرض تفاعلي لشجرة العائلة مع إمكانية التنقل بين الأجيال والفروع المختلفة
+                عرض تفاعلي لشجرة آل عمير مع إمكانية التنقل بين الأجيال والفروع المختلفة
               </p>
             </div>
 
@@ -112,7 +112,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">إدارة شاملة للأعضاء</h4>
               <p className="text-gray-600 leading-relaxed">
-                إضافة وتعديل معلومات أفراد العائلة مع إمكانية ربط العلاقات والمناسبات
+                إضافة وتعديل معلومات أفراد آل عمير مع إمكانية ربط العلاقات والمناسبات
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">قاعدة بيانات متقدمة</h4>
               <p className="text-gray-600 leading-relaxed">
-                نظام قاعدة بيانات قوي يدعم البحث المتقدم والإحصائيات التفصيلية
+                نظام قاعدة بيانات قوي يدعم البحث المتقدم والإحصائيات التفصيلية لقبيلة آل عمير
               </p>
             </div>
 
@@ -134,7 +134,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">أمان وخصوصية</h4>
               <p className="text-gray-600 leading-relaxed">
-                نظام صلاحيات متدرج يضمن حماية بيانات العائلة وخصوصية المعلومات
+                نظام صلاحيات متدرج يضمن حماية بيانات آل عمير وخصوصية المعلومات
               </p>
             </div>
 
@@ -145,7 +145,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">أرشيف رقمي</h4>
               <p className="text-gray-600 leading-relaxed">
-                حفظ الصور والوثائق والتسجيلات الصوتية المرتبطة بأفراد العائلة
+                حفظ الصور والوثائق والتسجيلات الصوتية المرتبطة بأفراد آل عمير
               </p>
             </div>
 
@@ -156,7 +156,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">تصدير واستيراد</h4>
               <p className="text-gray-600 leading-relaxed">
-                إمكانية تصدير البيانات إلى Excel واستيراد البيانات من ملفات خارجية
+                إمكانية تصدير بيانات آل عمير إلى Excel واستيراد البيانات من ملفات خارجية
               </p>
             </div>
           </div>
@@ -183,10 +183,10 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <h4 className="text-2xl font-bold text-gray-800 mb-4">مشاهد</h4>
               <ul className="text-gray-600 space-y-2 text-right">
-                <li>• عرض شجرة العائلة</li>
+                <li>• عرض شجرة آل عمير</li>
                 <li>• البحث في البيانات</li>
                 <li>• عرض الإحصائيات</li>
-                <li>• تصفح دليل العائلة</li>
+                <li>• تصفح دليل آل عمير</li>
               </ul>
             </div>
 
@@ -231,7 +231,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-3xl mx-auto">
             <h3 className="text-4xl font-bold text-white mb-6">
-              ابدأ في بناء شجرة عائلتك اليوم
+              ابدأ في بناء شجرة آل عمير اليوم
             </h3>
             <p className="text-xl text-emerald-100 mb-8 leading-relaxed">
               انضم إلى آلاف العائلات التي تستخدم نظامنا لحفظ تاريخها وذكرياتها
@@ -258,14 +258,14 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 <TreePine className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h4 className="text-2xl font-bold">شجرة العائلة</h4>
-                <p className="text-gray-400">حافظ على تراث عائلتك</p>
+                <h4 className="text-2xl font-bold">شجرة آل عمير</h4>
+                <p className="text-gray-400">حافظ على تراث قبيلتك</p>
               </div>
             </div>
             
             <div className="text-center md:text-right">
               <p className="text-gray-400">
-                © 2025 شجرة العائلة. جميع الحقوق محفوظة.
+                © 2025 شجرة آل عمير. جميع الحقوق محفوظة.
               </p>
             </div>
           </div>

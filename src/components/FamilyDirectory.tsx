@@ -125,7 +125,7 @@ export default function FamilyDirectory({ refreshTrigger }: FamilyDirectoryProps
       <div className="family-directory-loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <span>جاري تحميل دليل العائلة...</span>
+          <span>جاري تحميل دليل آل عمير...</span>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ export default function FamilyDirectory({ refreshTrigger }: FamilyDirectoryProps
             <Users className="icon" />
           </div>
           <div className="header-text">
-            <h2>دليل العائلة التفاعلي</h2>
+            <h2>دليل آل عمير التفاعلي</h2>
             <p>عدد الأعضاء: {members.reduce((total, member) => total + 1 + member.childrenCount, 0)}</p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function FamilyDirectory({ refreshTrigger }: FamilyDirectoryProps
         <div className="search-container">
           <input
             type="text"
-            placeholder="البحث في دليل العائلة..."
+            placeholder="البحث في دليل آل عمير..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
