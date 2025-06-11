@@ -1,5 +1,5 @@
 // Re-export the consolidated Supabase client and services from arabicFamilyService
-export { supabase, arabicFamilyService as familyService } from './arabicFamilyService';
+export { supabase } from './arabicFamilyService';
 
 // Legacy compatibility types - map to Arabic service types
 export interface FamilyMember {
