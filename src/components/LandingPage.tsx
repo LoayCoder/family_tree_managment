@@ -231,10 +231,10 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-3xl mx-auto">
             <h3 className="text-4xl font-bold text-white mb-6">
-              ابدأ في بناء شجرة آل عمير اليوم
+              ابدأ في التعرف على شجرة آل عمير اليوم
             </h3>
             <p className="text-xl text-emerald-100 mb-8 leading-relaxed">
-              انضم إلى آلاف العائلات التي تستخدم نظامنا لحفظ تاريخها وذكرياتها
+              تعرف على اول نظام عربي سعودي في إدارة الانساب و التاريخ القبلي
             </p>
             
             <button
@@ -259,7 +259,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </div>
               <div>
                 <h4 className="text-2xl font-bold">شجرة آل عمير</h4>
-                <p className="text-gray-400">حافظ على تراث قبيلتك</p>
+                <p className="text-gray-400">مباركة طيبة</p>
               </div>
             </div>
             
