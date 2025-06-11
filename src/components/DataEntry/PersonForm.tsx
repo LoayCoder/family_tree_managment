@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Calendar, MapPin, Phone, FileText, Save, X, Building, Hash, AlertCircle, Image, Skull, Heart, Trash2 } from 'lucide-react';
+import { User, Calendar, MapPin, Phone, FileText, Save, X, Building, Hash, AlertCircle, Image, Skull, Heart, Trash2, Plus, Minus } from 'lucide-react';
 import { arabicFamilyService, PersonWithDetails, Location, Branch } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
 
@@ -22,12 +22,13 @@ interface PersonFormData {
   صورة_شخصية: string;
   ملاحظات: string;
   is_deceased: boolean;
+  additional_names: string[];
 }
 
 interface PersonFormProps {
   onSuccess: () => void;
   onCancel: () => void;
-  editData?: PersonWithDetails;
+  editData?: Partial<PersonWithDetails>;
 }
 
 interface Woman {
@@ -47,10 +48,11 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
   const [nationalIdError, setNationalIdError] = useState<string>('');
   const [isCheckingNationalId, setIsCheckingNationalId] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [additionalNames, setAdditionalNames] = useState<string[]>([]);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, setError, clearErrors } = useForm<PersonFormData>({
     defaultValues: editData ? {
-      الاسم_الأول: editData.الاسم_الأول,
+      الاسم_الأول: editData.الاسم_الأول || '',
       is_root: editData.is_root || false,
       تاريخ_الميلاد: editData.تاريخ_الميلاد || '',
       تاريخ_الوفاة: editData.تاريخ_الوفاة || '',
@@ -66,12 +68,14 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       معرف_الفرع: editData.معرف_الفرع || '',
       صورة_شخصية: editData.صورة_شخصية || '',
       ملاحظات: editData.ملاحظات || '',
-      is_deceased: !!editData.تاريخ_الوفاة
+      is_deceased: !!editData.تاريخ_الوفاة,
+      additional_names: []
     } : {
       الجنس: 'ذكر',
       is_root: false,
       الحالة_الاجتماعية: 'أعزب',
-      is_deceased: false
+      is_deceased: false,
+      additional_names: []
     }
   });
 
@@ -244,6 +248,22 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     setImagePreview(null);
   };
 
+  const addNameField = () => {
+    setAdditionalNames([...additionalNames, '']);
+  };
+
+  const removeNameField = (index: number) => {
+    const newNames = [...additionalNames];
+    newNames.splice(index, 1);
+    setAdditionalNames(newNames);
+  };
+
+  const updateAdditionalName = (index: number, value: string) => {
+    const newNames = [...additionalNames];
+    newNames[index] = value;
+    setAdditionalNames(newNames);
+  };
+
   const onSubmit = async (data: PersonFormData) => {
     // Final validation before submission
     if (data.رقم_هوية_وطنية && data.رقم_هوية_وطنية.trim() !== '') {
@@ -263,8 +283,11 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
     setIsSubmitting(true);
     try {
+      // Combine the main name with additional names
+      const fullName = [data.الاسم_الأول, ...additionalNames.filter(name => name.trim() !== '')].join(' ');
+
       const personData = {
-        الاسم_الأول: data.الاسم_الأول,
+        الاسم_الأول: fullName,
         is_root: data.is_root,
         تاريخ_الميلاد: data.تاريخ_الميلاد || undefined,
         تاريخ_الوفاة: data.is_deceased ? data.تاريخ_الوفاة || undefined : undefined,
@@ -287,7 +310,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         // This will be handled in a separate function if needed
       }
 
-      if (editData) {
+      if (editData && editData.id) {
         await arabicFamilyService.updatePerson(editData.id, personData);
       } else {
         await arabicFamilyService.addPerson(personData);
@@ -325,7 +348,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  {editData ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
+                  {editData?.id ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
                 </h1>
                 <p className="text-gray-600">إدخال المعلومات الشخصية والعائلية</p>
               </div>
@@ -352,21 +375,80 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
             <div className="p-8 space-y-8">
               {/* Basic Information */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  الاسم
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* First Name */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <User className="w-4 h-4" />
+                      الاسم الأول *
+                    </label>
+                    <input
+                      {...register('الاسم_الأول', { required: 'الاسم الأول مطلوب' })}
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="أدخل الاسم الأول"
+                    />
+                    {errors.الاسم_الأول && (
+                      <p className="text-red-500 text-sm">{errors.الاسم_الأول.message}</p>
+                    )}
+                  </div>
+
+                  {/* Additional Names */}
+                  {additionalNames.map((name, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex-1 space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <User className="w-4 h-4" />
+                          الاسم الإضافي {index + 1}
+                        </label>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => updateAdditionalName(index, e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder={`أدخل الاسم الإضافي ${index + 1}`}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeNameField(index)}
+                        className="mt-8 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Minus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add Name Button */}
+                  <button
+                    type="button"
+                    onClick={addNameField}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    إضافة اسم آخر
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <User className="w-4 h-4" />
-                    الاسم الأول *
+                    الجنس *
                   </label>
-                  <input
-                    {...register('الاسم_الأول', { required: 'الاسم الأول مطلوب' })}
-                    type="text"
+                  <select
+                    {...register('الجنس', { required: 'الجنس مطلوب' })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="أدخل الاسم الأول"
-                  />
-                  {errors.الاسم_الأول && (
-                    <p className="text-red-500 text-sm">{errors.الاسم_الأول.message}</p>
-                  )}
+                  >
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -403,20 +485,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                       {nationalIdError || errors.رقم_هوية_وطنية?.message}
                     </p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <User className="w-4 h-4" />
-                    الجنس *
-                  </label>
-                  <select
-                    {...register('الجنس', { required: 'الجنس مطلوب' })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  >
-                    <option value="ذكر">ذكر</option>
-                    <option value="أنثى">أنثى</option>
-                  </select>
                 </div>
 
                 <div className="space-y-2">
@@ -501,7 +569,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                         <option value="">اختر الوالد</option>
                         {persons.filter(p => p.الجنس === 'ذكر').map((person) => (
                           <option key={person.id} value={person.id}>
-                            {person.الاسم_الكامل}
+                            {person.الاسم_الكامل || person.الاسم_الأول}
                           </option>
                         ))}
                       </select>
@@ -519,7 +587,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                         <option value="">اختر الوالدة</option>
                         {persons.filter(p => p.الجنس === 'أنثى').map((person) => (
                           <option key={person.id} value={person.id}>
-                            {person.الاسم_الكامل}
+                            {person.الاسم_الكامل || person.الاسم_الأول}
                           </option>
                         ))}
                       </select>
@@ -804,7 +872,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {editData ? 'تحديث البيانات' : 'حفظ البيانات'}
+                    {editData?.id ? 'تحديث البيانات' : 'حفظ البيانات'}
                   </>
                 )}
               </button>
