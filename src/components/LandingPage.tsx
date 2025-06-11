@@ -55,8 +55,8 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-              نظام شامل ومتطور لإدارة شجرة آل عمير والأنساب، يساعدك على توثيق تاريخ قبيلتك 
-              وحفظ ذكرياتكم وقصصكم في مكان واحد آمن ومنظم
+              نظام شامل ومتطور لإدارة شجرة آل عمير والأنساب، وتوثيق تاريخ القبيلة 
+              وحفظ ذكرياتها وقصصها و مأثرها في مكان واحد آمن ومنظم
             </p>
             
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
