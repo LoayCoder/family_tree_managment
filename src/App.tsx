@@ -320,7 +320,7 @@ function App() {
         </div>
 
         {/* Dynamic Content */}
-        <div className="landscape-container">
+        <div className="content-container">
           {activeView === 'arabic' && <ArabicFamilyTreeDemo />}
           {activeView === 'data-entry' && canAccess('editor') && <DataEntryManager />}
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
