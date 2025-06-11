@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Users, ChevronDown, ChevronRight, User, Calendar, Phone, Heart, Skull, Baby } from 'lucide-react';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
 import { familyService } from '../services/supabase';
+import ResponsiveContainer from './responsive/ResponsiveContainer';
+import ResponsiveText from './responsive/ResponsiveText';
 
 interface FamilyDirectoryProps {
   refreshTrigger: number;
@@ -122,228 +124,135 @@ export default function FamilyDirectory({ refreshTrigger }: FamilyDirectoryProps
 
   if (loading) {
     return (
-      <div className="family-directory-loading">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <span>جاري تحميل دليل آل عمير...</span>
+      <ResponsiveContainer>
+        <div className="family-directory-loading">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <span>جاري تحميل دليل آل عمير...</span>
+          </div>
         </div>
-      </div>
+      </ResponsiveContainer>
     );
   }
 
   return (
-    <div className="family-directory">
-      {/* Header */}
-      <div className="directory-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <Users className="icon" />
+    <ResponsiveContainer>
+      <div className="family-directory bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100">
+        {/* Header */}
+        <div className="directory-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="header-content flex items-center gap-3 sm:gap-4">
+            <div className="header-icon p-2 sm:p-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl shadow-md">
+              <Users className="icon w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div className="header-text">
+              <ResponsiveText as="h2" size="2xl" weight="bold" color="gray-800">
+                دليل آل عمير التفاعلي
+              </ResponsiveText>
+              <ResponsiveText size="sm" color="gray-600">
+                عدد الأعضاء: {members.reduce((total, member) => total + 1 + member.childrenCount, 0)}
+              </ResponsiveText>
+            </div>
           </div>
-          <div className="header-text">
-            <h2>دليل آل عمير التفاعلي</h2>
-            <p>عدد الأعضاء: {members.reduce((total, member) => total + 1 + member.childrenCount, 0)}</p>
-          </div>
-        </div>
-        
-        {/* Search */}
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="البحث في دليل آل عمير..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-      </div>
-
-      {/* Family Cards */}
-      <div className="family-cards-container">
-        {filteredMembers.length === 0 ? (
-          <div className="empty-state">
-            <Users className="empty-icon" />
-            <h3>لا توجد نتائج</h3>
-            <p>لم يتم العثور على أعضاء يطابقون البحث</p>
-          </div>
-        ) : (
-          filteredMembers.map((member) => (
-            <FamilyMemberCard
-              key={member.id}
-              member={member}
-              isExpanded={expandedCards.has(member.id)}
-              onToggleExpansion={() => toggleCardExpansion(member.id)}
-              formatDate={formatDate}
-              calculateAge={calculateAge}
+          
+          {/* Search */}
+          <div className="search-container w-full sm:w-auto max-w-md">
+            <input
+              type="text"
+              placeholder="البحث في دليل آل عمير..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
             />
-          ))
-        )}
-      </div>
+          </div>
+        </div>
 
-      <style jsx>{`
-        .family-directory {
-          background: white;
-          border-radius: 24px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          padding: 32px;
-          border: 1px solid #f3f4f6;
-        }
+        {/* Family Cards */}
+        <div className="family-cards-container grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {filteredMembers.length === 0 ? (
+            <div className="empty-state col-span-full py-12 text-center">
+              <Users className="empty-icon w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-2" />
+              <ResponsiveText as="h3" size="xl" weight="semibold" color="gray-600" className="mb-2">
+                لا توجد نتائج
+              </ResponsiveText>
+              <ResponsiveText size="base" color="gray-500">
+                لم يتم العثور على أعضاء يطابقون البحث
+              </ResponsiveText>
+            </div>
+          ) : (
+            filteredMembers.map((member) => (
+              <FamilyMemberCard
+                key={member.id}
+                member={member}
+                isExpanded={expandedCards.has(member.id)}
+                onToggleExpansion={() => toggleCardExpansion(member.id)}
+                formatDate={formatDate}
+                calculateAge={calculateAge}
+              />
+            ))
+          )}
+        </div>
 
-        .family-directory-loading {
-          background: white;
-          border-radius: 24px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-          padding: 48px;
-          border: 1px solid #f3f4f6;
-        }
-
-        .loading-spinner {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          font-size: 18px;
-          font-weight: 500;
-          color: #6b7280;
-        }
-
-        .spinner {
-          width: 32px;
-          height: 32px;
-          border: 4px solid #10b981;
-          border-top: 4px solid transparent;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .directory-header {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          margin-bottom: 32px;
-        }
-
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .header-icon {
-          padding: 12px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
-        }
-
-        .header-icon .icon {
-          width: 24px;
-          height: 24px;
-          color: white;
-        }
-
-        .header-text h2 {
-          font-size: 28px;
-          font-weight: 700;
-          color: #1f2937;
-          margin: 0 0 4px 0;
-        }
-
-        .header-text p {
-          color: #6b7280;
-          margin: 0;
-        }
-
-        .search-container {
-          position: relative;
-          max-width: 400px;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 16px 20px;
-          border: 2px solid #e5e7eb;
-          border-radius: 16px;
-          font-size: 16px;
-          transition: all 0.2s ease;
-          background: #f9fafb;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #10b981;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-
-        .family-cards-container {
-          display: grid;
-          gap: 24px;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 48px 24px;
-          color: #6b7280;
-        }
-
-        .empty-icon {
-          width: 64px;
-          height: 64px;
-          margin: 0 auto 16px;
-          color: #d1d5db;
-        }
-
-        .empty-state h3 {
-          font-size: 20px;
-          font-weight: 600;
-          margin: 0 0 8px 0;
-        }
-
-        .empty-state p {
-          margin: 0;
-        }
-
-        /* Responsive Design */
-        @media (min-width: 768px) {
-          .directory-header {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .family-cards-container {
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .family-cards-container {
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-          }
-        }
-
-        @media (max-width: 640px) {
+        <style jsx>{`
           .family-directory {
-            padding: 20px;
-            border-radius: 16px;
+            transition: all 0.3s ease;
           }
 
-          .header-text h2 {
-            font-size: 24px;
+          .family-directory-loading {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1rem 1.5rem -0.3rem rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            border: 1px solid #f3f4f6;
+            text-align: center;
           }
 
-          .search-input {
-            padding: 12px 16px;
-            font-size: 14px;
+          .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #6b7280;
           }
-        }
-      `}</style>
-    </div>
+
+          .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 0.25rem solid #10b981;
+            border-top: 0.25rem solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+
+          .empty-state {
+            color: #6b7280;
+          }
+
+          @media (max-width: 640px) {
+            .family-directory {
+              padding: 1.25rem;
+              border-radius: 1rem;
+            }
+            
+            .loading-spinner {
+              font-size: 1rem;
+            }
+            
+            .spinner {
+              width: 1.5rem;
+              height: 1.5rem;
+              border-width: 0.2rem;
+            }
+          }
+        `}</style>
+      </div>
+    </ResponsiveContainer>
   );
 }
 
@@ -365,10 +274,6 @@ function FamilyMemberCard({
   const getStatusColor = (isAlive: boolean | undefined) => {
     if (isAlive === false) return 'status-deceased';
     return 'status-alive';
-  };
-
-  const getGenderIcon = (gender: string | null) => {
-    return <User className="gender-icon" />;
   };
 
   return (
@@ -447,7 +352,7 @@ function FamilyMemberCard({
 
             {member.gender && (
               <div className="info-item">
-                {getGenderIcon(member.gender)}
+                <User className="info-icon" />
                 <div>
                   <span className="info-label">الجنس</span>
                   <span className="info-value">{member.gender}</span>
@@ -518,16 +423,16 @@ function FamilyMemberCard({
       <style jsx>{`
         .member-card {
           background: white;
-          border-radius: 20px;
-          border: 2px solid #f3f4f6;
+          border-radius: 1.25rem;
+          border: 0.125rem solid #f3f4f6;
           overflow: hidden;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1);
         }
 
         .member-card:hover {
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          transform: translateY(-2px);
+          box-shadow: 0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3125rem rgba(0, 0, 0, 0.04);
+          transform: translateY(-0.125rem);
         }
 
         .member-card.deceased {
@@ -536,12 +441,18 @@ function FamilyMemberCard({
         }
 
         .card-header {
-          padding: 24px;
+          padding: 1.25rem;
           cursor: pointer;
           display: flex;
           justify-content: space-between;
           align-items: center;
           transition: background-color 0.2s ease;
+        }
+
+        @media (max-width: 640px) {
+          .card-header {
+            padding: 1rem;
+          }
         }
 
         .card-header:hover {
@@ -551,52 +462,99 @@ function FamilyMemberCard({
         .member-info {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 0.75rem;
           flex: 1;
         }
 
+        @media (max-width: 640px) {
+          .member-info {
+            gap: 0.5rem;
+          }
+        }
+
         .avatar {
-          width: 56px;
-          height: 56px;
-          border-radius: 16px;
+          width: 3rem;
+          height: 3rem;
+          border-radius: 1rem;
           background: linear-gradient(135deg, #10b981, #059669);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+          box-shadow: 0 0.25rem 0.375rem -0.0625rem rgba(16, 185, 129, 0.3);
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 640px) {
+          .avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+          }
         }
 
         .avatar-icon {
-          width: 28px;
-          height: 28px;
+          width: 1.5rem;
+          height: 1.5rem;
           color: white;
+        }
+
+        @media (max-width: 640px) {
+          .avatar-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+          }
         }
 
         .member-details {
           flex: 1;
+          min-width: 0;
         }
 
         .member-name {
-          font-size: 20px;
+          font-size: 1.25rem;
           font-weight: 700;
           color: #1f2937;
-          margin: 0 0 8px 0;
+          margin: 0 0 0.5rem 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        @media (max-width: 640px) {
+          .member-name {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+          }
         }
 
         .member-meta {
           display: flex;
-          gap: 12px;
+          gap: 0.75rem;
           flex-wrap: wrap;
+        }
+
+        @media (max-width: 640px) {
+          .member-meta {
+            gap: 0.5rem;
+          }
         }
 
         .status-badge, .age-badge {
           display: flex;
           align-items: center;
-          gap: 4px;
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
+          gap: 0.25rem;
+          padding: 0.25rem 0.75rem;
+          border-radius: 0.75rem;
+          font-size: 0.75rem;
           font-weight: 500;
+        }
+
+        @media (max-width: 640px) {
+          .status-badge, .age-badge {
+            padding: 0.125rem 0.5rem;
+            font-size: 0.625rem;
+            border-radius: 0.5rem;
+          }
         }
 
         .status-badge.status-alive {
@@ -618,39 +576,68 @@ function FamilyMemberCard({
         }
 
         .status-icon, .age-icon {
-          width: 12px;
-          height: 12px;
+          width: 0.75rem;
+          height: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+          .status-icon, .age-icon {
+            width: 0.625rem;
+            height: 0.625rem;
+          }
         }
 
         .card-actions {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+          .card-actions {
+            gap: 0.5rem;
+          }
         }
 
         .children-badge {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
+          gap: 0.375rem;
+          padding: 0.375rem 0.75rem;
           background: #fef3c7;
           color: #92400e;
-          border-radius: 12px;
-          font-size: 14px;
+          border-radius: 0.75rem;
+          font-size: 0.875rem;
           font-weight: 600;
           border: 1px solid #fde68a;
         }
 
+        @media (max-width: 640px) {
+          .children-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            gap: 0.25rem;
+            border-radius: 0.5rem;
+          }
+        }
+
         .children-icon {
-          width: 16px;
-          height: 16px;
+          width: 1rem;
+          height: 1rem;
+        }
+
+        @media (max-width: 640px) {
+          .children-icon {
+            width: 0.875rem;
+            height: 0.875rem;
+          }
         }
 
         .expand-button {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          border: 2px solid #e5e7eb;
+          width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 0.75rem;
+          border: 0.125rem solid #e5e7eb;
           background: white;
           display: flex;
           align-items: center;
@@ -659,16 +646,31 @@ function FamilyMemberCard({
           transition: all 0.2s ease;
         }
 
+        @media (max-width: 640px) {
+          .expand-button {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+          }
+        }
+
         .expand-button:hover {
           border-color: #10b981;
           background: #f0fdf4;
         }
 
         .expand-icon {
-          width: 20px;
-          height: 20px;
+          width: 1.25rem;
+          height: 1.25rem;
           color: #6b7280;
           transition: transform 0.2s ease;
+        }
+
+        @media (max-width: 640px) {
+          .expand-icon {
+            width: 1rem;
+            height: 1rem;
+          }
         }
 
         .card-content {
@@ -682,30 +684,51 @@ function FamilyMemberCard({
         }
 
         .card-content.expanded {
-          max-height: 2000px;
+          max-height: 125rem;
           opacity: 1;
         }
 
         .member-expanded-info {
-          padding: 0 24px 24px;
+          padding: 0 1.25rem 1.25rem;
           border-top: 1px solid #f3f4f6;
           margin-top: 0;
         }
 
+        @media (max-width: 640px) {
+          .member-expanded-info {
+            padding: 0 1rem 1rem;
+          }
+        }
+
         .info-grid {
           display: grid;
-          gap: 16px;
-          margin-top: 20px;
+          gap: 1rem;
+          margin-top: 1.25rem;
+          grid-template-columns: repeat(1, 1fr);
+        }
+
+        @media (min-width: 640px) {
+          .info-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
 
         .info-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
+          gap: 0.75rem;
+          padding: 0.75rem;
           background: #f9fafb;
-          border-radius: 12px;
+          border-radius: 0.75rem;
           border: 1px solid #f3f4f6;
+        }
+
+        @media (max-width: 640px) {
+          .info-item {
+            padding: 0.5rem;
+            gap: 0.5rem;
+            border-radius: 0.5rem;
+          }
         }
 
         .info-item.death-info {
@@ -714,133 +737,242 @@ function FamilyMemberCard({
         }
 
         .info-icon {
-          width: 20px;
-          height: 20px;
+          width: 1.25rem;
+          height: 1.25rem;
           color: #6b7280;
           flex-shrink: 0;
         }
 
+        @media (max-width: 640px) {
+          .info-icon {
+            width: 1rem;
+            height: 1rem;
+          }
+        }
+
         .info-label {
           display: block;
-          font-size: 12px;
+          font-size: 0.75rem;
           color: #6b7280;
           font-weight: 500;
         }
 
         .info-value {
           display: block;
-          font-size: 14px;
+          font-size: 0.875rem;
           color: #1f2937;
           font-weight: 600;
         }
 
+        @media (max-width: 640px) {
+          .info-value {
+            font-size: 0.75rem;
+          }
+        }
+
         .notes-section {
-          margin-top: 20px;
-          padding: 16px;
+          margin-top: 1.25rem;
+          padding: 1rem;
           background: #fffbeb;
-          border-radius: 12px;
+          border-radius: 0.75rem;
           border: 1px solid #fde68a;
         }
 
         .notes-section h4 {
-          margin: 0 0 8px 0;
-          font-size: 14px;
+          margin: 0 0 0.5rem 0;
+          font-size: 0.875rem;
           font-weight: 600;
           color: #92400e;
         }
 
         .notes-section p {
           margin: 0;
-          font-size: 14px;
+          font-size: 0.875rem;
           color: #78350f;
           line-height: 1.5;
         }
 
+        @media (max-width: 640px) {
+          .notes-section {
+            padding: 0.75rem;
+          }
+          
+          .notes-section h4 {
+            font-size: 0.75rem;
+          }
+          
+          .notes-section p {
+            font-size: 0.75rem;
+          }
+        }
+
         .children-section {
-          padding: 24px;
+          padding: 1.25rem;
           border-top: 1px solid #f3f4f6;
           background: #fafafa;
+        }
+
+        @media (max-width: 640px) {
+          .children-section {
+            padding: 1rem;
+          }
         }
 
         .children-title {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin: 0 0 16px 0;
-          font-size: 16px;
+          gap: 0.5rem;
+          margin: 0 0 1rem 0;
+          font-size: 1rem;
           font-weight: 600;
           color: #1f2937;
         }
 
+        @media (max-width: 640px) {
+          .children-title {
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+          }
+        }
+
         .children-title-icon {
-          width: 20px;
-          height: 20px;
+          width: 1.25rem;
+          height: 1.25rem;
           color: #10b981;
+        }
+
+        @media (max-width: 640px) {
+          .children-title-icon {
+            width: 1rem;
+            height: 1rem;
+          }
         }
 
         .children-grid {
           display: grid;
-          gap: 12px;
+          gap: 0.75rem;
+          grid-template-columns: repeat(1, 1fr);
+        }
+
+        @media (min-width: 640px) {
+          .children-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
 
         .child-card {
           background: white;
-          border-radius: 12px;
-          padding: 16px;
+          border-radius: 0.75rem;
+          padding: 0.75rem;
           border: 1px solid #e5e7eb;
           transition: all 0.2s ease;
         }
 
+        @media (max-width: 640px) {
+          .child-card {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+          }
+        }
+
         .child-card:hover {
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transform: translateY(-1px);
+          box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+          transform: translateY(-0.0625rem);
         }
 
         .child-header {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+          .child-header {
+            gap: 0.5rem;
+          }
         }
 
         .child-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+          width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 0.625rem;
           background: linear-gradient(135deg, #3b82f6, #1d4ed8);
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 640px) {
+          .child-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+          }
         }
 
         .child-avatar-icon {
-          width: 20px;
-          height: 20px;
+          width: 1.25rem;
+          height: 1.25rem;
           color: white;
+        }
+
+        @media (max-width: 640px) {
+          .child-avatar-icon {
+            width: 1rem;
+            height: 1rem;
+          }
         }
 
         .child-info {
           flex: 1;
+          min-width: 0;
         }
 
         .child-name {
-          font-size: 16px;
+          font-size: 1rem;
           font-weight: 600;
           color: #1f2937;
-          margin: 0 0 4px 0;
+          margin: 0 0 0.25rem 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        @media (max-width: 640px) {
+          .child-name {
+            font-size: 0.875rem;
+            margin-bottom: 0.125rem;
+          }
         }
 
         .child-age {
-          font-size: 12px;
+          font-size: 0.75rem;
           color: #6b7280;
         }
 
+        @media (max-width: 640px) {
+          .child-age {
+            font-size: 0.625rem;
+          }
+        }
+
         .child-status {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 0.5rem;
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 640px) {
+          .child-status {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.375rem;
+          }
         }
 
         .child-status.status-alive {
@@ -852,66 +984,46 @@ function FamilyMemberCard({
         }
 
         .child-status-icon {
-          width: 16px;
-          height: 16px;
+          width: 1rem;
+          height: 1rem;
+        }
+
+        @media (max-width: 640px) {
+          .child-status-icon {
+            width: 0.75rem;
+            height: 0.75rem;
+          }
         }
 
         .child-contact {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-top: 12px;
-          padding-top: 12px;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+          padding-top: 0.75rem;
           border-top: 1px solid #f3f4f6;
-          font-size: 14px;
+          font-size: 0.875rem;
           color: #6b7280;
         }
 
-        .child-contact-icon {
-          width: 16px;
-          height: 16px;
+        @media (max-width: 640px) {
+          .child-contact {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            font-size: 0.75rem;
+            gap: 0.375rem;
+          }
         }
 
-        /* Responsive Design */
-        @media (min-width: 640px) {
-          .info-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .children-grid {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          }
+        .child-contact-icon {
+          width: 1rem;
+          height: 1rem;
         }
 
         @media (max-width: 640px) {
-          .card-header {
-            padding: 16px;
-          }
-
-          .member-expanded-info {
-            padding: 0 16px 16px;
-          }
-
-          .children-section {
-            padding: 16px;
-          }
-
-          .member-name {
-            font-size: 18px;
-          }
-
-          .member-meta {
-            gap: 8px;
-          }
-
-          .avatar {
-            width: 48px;
-            height: 48px;
-          }
-
-          .avatar-icon {
-            width: 24px;
-            height: 24px;
+          .child-contact-icon {
+            width: 0.75rem;
+            height: 0.75rem;
           }
         }
       `}</style>

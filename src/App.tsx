@@ -8,6 +8,11 @@ import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import { supabase } from './services/arabicFamilyService';
+import ResponsiveHeader from './components/responsive/ResponsiveHeader';
+import ResponsiveFooter from './components/responsive/ResponsiveFooter';
+import ResponsiveContainer from './components/responsive/ResponsiveContainer';
+import ResponsiveFlex from './components/responsive/ResponsiveFlex';
+import ResponsiveButton from './components/responsive/ResponsiveButton';
 
 interface User {
   id: string;
@@ -107,10 +112,10 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-lg font-medium text-gray-600">جاري التحميل...</span>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-base sm:text-lg font-medium text-gray-600">جاري التحميل...</span>
           </div>
         </div>
       </div>
@@ -120,26 +125,28 @@ function App() {
   // Show pending approval message
   if (user && user.approval_status === 'pending') {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md w-full text-center">
-          <div className="p-4 bg-amber-100 rounded-full w-fit mx-auto mb-6">
-            <Clock className="w-12 h-12 text-amber-600" />
+      <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 max-w-md w-full text-center">
+          <div className="p-3 sm:p-4 bg-amber-100 rounded-full w-fit mx-auto mb-4 sm:mb-6">
+            <Clock className="w-8 h-8 sm:w-12 sm:h-12 text-amber-600" />
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">حسابك قيد المراجعة</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">حسابك قيد المراجعة</h2>
           
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             شكراً لتسجيلك في نظام شجرة آل عمير. حسابك قيد المراجعة حالياً من قبل مدير النظام.
             سيتم إعلامك عبر البريد الإلكتروني عند الموافقة على حسابك.
           </p>
           
-          <button
+          <ResponsiveButton
             onClick={handleLogout}
-            className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center gap-2 mx-auto"
+            variant="secondary"
+            size="md"
+            icon={<LogOut className="w-4 h-4 sm:w-5 sm:h-5" />}
+            className="mx-auto"
           >
-            <LogOut className="w-5 h-5" />
             تسجيل الخروج
-          </button>
+          </ResponsiveButton>
         </div>
       </div>
     );
@@ -148,26 +155,28 @@ function App() {
   // Show rejected message
   if (user && user.approval_status === 'rejected') {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md w-full text-center">
-          <div className="p-4 bg-red-100 rounded-full w-fit mx-auto mb-6">
-            <XCircle className="w-12 h-12 text-red-600" />
+      <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 max-w-md w-full text-center">
+          <div className="p-3 sm:p-4 bg-red-100 rounded-full w-fit mx-auto mb-4 sm:mb-6">
+            <XCircle className="w-8 h-8 sm:w-12 sm:h-12 text-red-600" />
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">تم رفض طلب حسابك</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">تم رفض طلب حسابك</h2>
           
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             عذراً، تم رفض طلب إنشاء حسابك في نظام شجرة آل عمير.
             يرجى التواصل مع مدير النظام للحصول على مزيد من المعلومات.
           </p>
           
-          <button
+          <ResponsiveButton
             onClick={handleLogout}
-            className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center gap-2 mx-auto"
+            variant="secondary"
+            size="md"
+            icon={<LogOut className="w-4 h-4 sm:w-5 sm:h-5" />}
+            className="mx-auto"
           >
-            <LogOut className="w-5 h-5" />
             تسجيل الخروج
-          </button>
+          </ResponsiveButton>
         </div>
       </div>
     );
@@ -200,121 +209,150 @@ function App() {
     <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl shadow-lg">
-                <TreePine className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  شجرة آل عمير
-                </h1>
-                <p className="text-gray-600 text-sm">نظام إدارة الأنساب والعائلات</p>
-              </div>
-            </div>
-            
-            {user && (
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-600">
-                  <span>مرحباً، {user.full_name || user.email}</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    user.user_level === 'admin' ? 'bg-red-100 text-red-700' :
-                    user.user_level === 'editor' ? 'bg-blue-100 text-blue-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {user.user_level === 'admin' ? 'مدير' :
-                     user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
-                  </span>
+        <ResponsiveContainer>
+          <div className="py-3 sm:py-4">
+            <ResponsiveFlex justify="between">
+              <ResponsiveFlex gap="sm">
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl sm:rounded-2xl shadow-lg">
+                  <TreePine className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </div>
-                
-                {user.user_level === 'admin' && (
+                <div>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                    شجرة آل عمير
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-600">نظام إدارة الأنساب والعائلات</p>
+                </div>
+              </ResponsiveFlex>
+              
+              {user && (
+                <ResponsiveFlex gap="sm" className="hide-on-mobile">
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    <span>مرحباً، {user.full_name || user.email}</span>
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                      user.user_level === 'admin' ? 'bg-red-100 text-red-700' :
+                      user.user_level === 'editor' ? 'bg-blue-100 text-blue-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {user.user_level === 'admin' ? 'مدير' :
+                       user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
+                    </span>
+                  </div>
+                  
+                  {user.user_level === 'admin' && (
+                    <button
+                      onClick={() => setActiveView('admin')}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                      title="لوحة تحكم المدير"
+                    >
+                      <Shield className="w-5 h-5" />
+                    </button>
+                  )}
+                  
                   <button
-                    onClick={() => setActiveView('admin')}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                    title="لوحة تحكم المدير"
+                    onClick={handleLogout}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                    title="تسجيل الخروج"
                   >
-                    <Shield className="w-5 h-5" />
+                    <LogOut className="w-5 h-5" />
                   </button>
-                )}
-                
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                  title="تسجيل الخروج"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+                </ResponsiveFlex>
+              )}
+              
+              {/* Mobile user menu */}
+              {user && (
+                <div className="show-on-mobile">
+                  <ResponsiveFlex gap="xs">
+                    {user.user_level === 'admin' && (
+                      <button
+                        onClick={() => setActiveView('admin')}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="لوحة تحكم المدير"
+                      >
+                        <Shield className="w-4 h-4" />
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="تسجيل الخروج"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </ResponsiveFlex>
+                </div>
+              )}
+            </ResponsiveFlex>
           </div>
-        </div>
+        </ResponsiveContainer>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8 space-y-8">
+      <ResponsiveContainer className="py-4 sm:py-6 md:py-8 space-y-6 sm:space-y-8">
         {/* Welcome Section */}
-        <div className="text-center py-6">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">
+        <div className="text-center py-4 sm:py-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">
             أهلاً وسهلاً بكم في شجرة آل عمير
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             احتفظ بتاريخ عائلتك وأنسابها في مكان واحد آمن ومنظم، 
             وشارك ذكرياتكم وقصصكم مع الأجيال القادمة
           </p>
         </div>
 
         {/* View Toggle */}
-        <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200">
+        <div className="flex justify-center mb-4 sm:mb-6 overflow-x-auto pb-2">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-lg border border-gray-200 flex flex-nowrap">
             <button
               onClick={() => setActiveView('arabic')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                 activeView === 'arabic'
                   ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
-              <Database className="w-5 h-5" />
-              النظام المتقدم
+              <Database className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hide-on-mobile">النظام المتقدم</span>
+              <span className="show-on-mobile">النظام</span>
             </button>
             
             {canAccess('editor') && (
               <button
                 onClick={() => setActiveView('data-entry')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                   activeView === 'data-entry'
                     ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                 }`}
               >
-                <Plus className="w-5 h-5" />
-                إدخال البيانات
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hide-on-mobile">إدخال البيانات</span>
+                <span className="show-on-mobile">البيانات</span>
               </button>
             )}
             
             <button
               onClick={() => setActiveView('tree')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                 activeView === 'tree'
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
-              <TreePine className="w-5 h-5" />
-              شجرة آل عمير
+              <TreePine className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>الشجرة</span>
             </button>
             
             <button
               onClick={() => setActiveView('directory')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                 activeView === 'directory'
                   ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
               }`}
             >
-              <Heart className="w-5 h-5" />
-              دليل آل عمير
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>الدليل</span>
             </button>
           </div>
         </div>
@@ -327,33 +365,23 @@ function App() {
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
           
           {activeView === 'data-entry' && !canAccess('editor') && (
-            <div className="text-center py-12">
-              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
+            <div className="text-center py-8 sm:py-12">
+              <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 max-w-md mx-auto">
                 <div className="text-red-500 mb-4">
-                  <User className="w-16 h-16 mx-auto" />
+                  <User className="w-12 h-12 sm:w-16 sm:h-16 mx-auto" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
+                <p className="text-sm sm:text-base text-gray-600">
                   تحتاج إلى صلاحيات محرر أو مدير للوصول إلى هذا القسم
                 </p>
               </div>
             </div>
           )}
         </div>
-      </main>
+      </ResponsiveContainer>
 
       {/* Footer */}
-      <footer className="bg-white/90 backdrop-blur-sm border-t border-gray-200 mt-12">
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center text-gray-600">
-            <p className="flex items-center justify-center gap-2">
-              <TreePine className="w-5 h-5" />
-              شجرة آل عمير - حافظ على تراث عائلتك
-              <Heart className="w-4 h-4 text-red-500 fill-current" />
-            </p>
-          </div>
-        </div>
-      </footer>
+      <ResponsiveFooter />
     </div>
   );
 }
