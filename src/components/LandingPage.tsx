@@ -49,7 +49,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="container mx-auto px-6 text-center">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-6xl font-bold text-gray-800 mb-6 leading-tight">
-              احتفظ بتاريخ آل عمير
+              تاريخ آل عمير
               <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                 للأجيال القادمة
               </span>
