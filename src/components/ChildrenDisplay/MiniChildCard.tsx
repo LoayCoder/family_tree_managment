@@ -28,7 +28,9 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
         borderRightColor: child.visualTheme.inheritedColor,
         borderRightWidth: '3px',
       }}
+      dir="rtl"
     >
+      {/* Avatar */}
       <div className="relative flex-shrink-0">
         <div className="w-8 h-8 bg-slate-200 flex items-center justify-center rounded-lg">
           <User className="w-4 h-4 text-slate-600" />
@@ -40,20 +42,22 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <h4 className="text-xs font-semibold text-slate-800 leading-snug break-words text-right w-full" dir="rtl">
-  {child.displayData.name}
-</h4>
+      {/* Info */}
+      <div className="flex-1 min-w-0 text-right">
+        <h4 className="text-xs font-semibold text-slate-800 leading-snug break-words w-full" dir="rtl">
+          {child.displayData.name}
+        </h4>
+        <p className="text-xs text-slate-600">{ageDisplay}</p>
 
-        <p className="text-xs text-slate-600 truncate">{ageDisplay}</p>
         {child.quickStats.isMarried && child.quickStats.spouse && (
-          <div className="flex items-center gap-0.5 text-xs text-red-600">
+          <div className="flex items-center gap-1 text-xs text-red-600 mt-0.5 truncate">
             <Heart size={8} />
-            <span className="truncate max-w-20">{child.quickStats.spouse}</span>
+            <span className="truncate">{child.quickStats.spouse}</span>
           </div>
         )}
       </div>
 
+      {/* Stats */}
       <div className="flex flex-col gap-0.5 items-end">
         {child.quickStats.childrenCount > 0 && (
           <span className="text-xs px-1 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
