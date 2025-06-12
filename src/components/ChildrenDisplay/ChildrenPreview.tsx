@@ -74,47 +74,44 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
     <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
       {/* Search and Controls */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-3 pb-3 border-b border-slate-200">
-        <div className="flex gap-3 items-center w-full md:w-auto">
-          {/* Search Input */}
-          <div className="relative flex-1 md:w-48">
-            <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="بحث..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-8 pl-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            />
-          </div>
+        <div className="flex flex-wrap gap-2 items-center w-full md:w-auto" dir="rtl">
+  <div className="relative flex-1 min-w-[120px] max-w-[200px]">
+    <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+    <input
+      type="text"
+      placeholder="بحث..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full pr-8 pl-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    />
+  </div>
 
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-1.5">
-            <SortAsc className="w-3.5 h-3.5 text-slate-500" />
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            >
-              <option value="age">العمر</option>
-              <option value="name">الاسم</option>
-              <option value="children">عدد الأطفال</option>
-            </select>
-          </div>
+  <div className="flex items-center gap-1">
+    <SortAsc className="w-4 h-4 text-slate-500" />
+    <select
+      value={sortBy}
+      onChange={(e) => setSortBy(e.target.value as any)}
+      className="px-2 py-1 border border-slate-300 rounded-md text-xs bg-white text-slate-700"
+    >
+      <option value="age">العمر</option>
+      <option value="name">الاسم</option>
+      <option value="children">عدد الأطفال</option>
+    </select>
+  </div>
 
-          {/* Filter Dropdown */}
-          <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
-            <select 
-              value={filterStatus} 
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="px-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            >
-              <option value="all">الكل</option>
-              <option value="alive">أحياء</option>
-              <option value="deceased">متوفون</option>
-            </select>
-          </div>
-        </div>
+  <div className="flex items-center gap-1">
+    <Filter className="w-4 h-4 text-slate-500" />
+    <select
+      value={filterStatus}
+      onChange={(e) => setFilterStatus(e.target.value as any)}
+      className="px-2 py-1 border border-slate-300 rounded-md text-xs bg-white text-slate-700"
+    >
+      <option value="all">الكل</option>
+      <option value="alive">أحياء</option>
+      <option value="deceased">متوفون</option>
+    </select>
+  </div>
+</div>
 
         {/* View Mode Toggles */}
         <div className="flex items-center gap-2 self-end md:self-auto">
