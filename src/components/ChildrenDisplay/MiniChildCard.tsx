@@ -20,7 +20,7 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
 
   return (
     <div
-      className={`bg-white border rounded-lg p-2 cursor-pointer flex items-center gap-2 transition shadow-sm hover:shadow-md ${
+      className={`bg-white border rounded-lg p-3 cursor-pointer flex items-center gap-3 transition shadow-sm hover:shadow-md ${
         child.displayData.status === 'deceased' ? 'bg-gray-50 border-gray-300' : 'border-slate-200'
       }`}
       onClick={onClick}
@@ -32,12 +32,12 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0">
-        <div className="w-8 h-8 bg-slate-200 flex items-center justify-center rounded-lg">
+        <div className="w-9 h-9 bg-slate-200 flex items-center justify-center rounded-lg">
           <User className="w-4 h-4 text-slate-600" />
         </div>
         {child.quickStats.hasChildren && (
-          <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full text-white border border-white flex items-center justify-center">
-            <Users size={8} />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full text-white border border-white flex items-center justify-center">
+            <Users size={10} />
           </div>
         )}
       </div>
