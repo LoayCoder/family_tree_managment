@@ -20,7 +20,7 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
 
   return (
     <div
-      className={`bg-white border rounded-lg p-3 cursor-pointer flex items-center gap-3 transition shadow-sm hover:shadow-md ${
+      className={`bg-white border rounded-lg p-3 cursor-pointer flex items-start gap-3 transition shadow-sm hover:shadow-md ${
         child.displayData.status === 'deceased' ? 'bg-gray-50 border-gray-300' : 'border-slate-200'
       }`}
       onClick={onClick}
@@ -44,32 +44,36 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
 
       {/* Info */}
       <div className="flex-1 min-w-0 text-right">
+        {/* Name always on first line, no truncation */}
         <h4
-          className="text-xs font-semibold text-slate-800 leading-normal w-full overflow-hidden text-ellipsis whitespace-nowrap"
-          style={{ direction: 'rtl' }}
+          className="text-sm font-bold text-slate-800 leading-snug break-words"
+          style={{ direction: 'rtl', wordBreak: 'break-word' }}
         >
           {child.displayData.name}
         </h4>
 
-        <p className="text-xs text-slate-600">{ageDisplay}</p>
+        {/* Secondary info */}
+        <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+          <div>{ageDisplay}</div>
 
-        {child.quickStats.isMarried && child.quickStats.spouse && (
-          <div className="flex items-center gap-1 text-xs text-red-600 mt-0.5 truncate">
-            <Heart size={8} />
-            <span className="truncate">{child.quickStats.spouse}</span>
-          </div>
-        )}
+          {child.quickStats.isMarried && child.quickStats.spouse && (
+            <div className="flex items-center gap-1 text-red-600 mt-0.5">
+              <Heart size={10} />
+              <span className="truncate">{child.quickStats.spouse}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="flex flex-col gap-0.5 items-end">
+      <div className="flex flex-col gap-1 items-end mt-1">
         {child.quickStats.childrenCount > 0 && (
-          <span className="text-xs px-1 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
+          <span className="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium whitespace-nowrap">
             👥 {child.quickStats.childrenCount}
           </span>
         )}
         {child.displayData.status === 'deceased' && (
-          <span className="text-xs px-1 py-0.5 bg-gray-100 rounded text-gray-600 font-medium">
+          <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 font-medium">
             <Skull className="w-3 h-3 inline-block" />
           </span>
         )}
