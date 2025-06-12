@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Heart, User, Skull } from 'lucide-react';
+import { Users, User } from 'lucide-react';
 import { ChildCard } from '../../services/childrenService';
 
 interface MiniChildCardProps {
@@ -13,72 +13,40 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
   onClick,
   displayMode,
 }) => {
-  const ageDisplay =
-    child.displayData.status === 'alive'
-      ? `${child.displayData.currentAge || 'غير محدد'} سنة`
-      : `${child.displayData.birthYear} - متوفى`;
-
   const firstName = child.displayData.name.split(' ')[0];
 
   return (
     <div
-      className={`bg-white border rounded-lg p-3 cursor-pointer flex items-start gap-3 transition shadow-sm hover:shadow-md ${
-        child.displayData.status === 'deceased' ? 'bg-gray-50 border-gray-300' : 'border-slate-200'
-      }`}
+      className="bg-white border rounded-xl px-3 py-2 cursor-pointer flex items-center justify-between gap-3 hover:shadow-sm transition"
       onClick={onClick}
+      dir="rtl"
       style={{
         borderRightColor: child.visualTheme.inheritedColor,
         borderRightWidth: '3px',
       }}
-      dir="rtl"
     >
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
-        <div className="w-9 h-9 bg-slate-200 flex items-center justify-center rounded-lg">
-          <User className="w-4 h-4 text-slate-600" />
-        </div>
-        {child.quickStats.hasChildren && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full text-white border border-white flex items-center justify-center">
-            <Users size={10} />
+      {/* Left Side: Icons */}
+      <div className="flex items-center gap-1">
+        {child.quickStats.childrenCount > 0 && (
+          <div className="flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded">
+            <span>{child.quickStats.childrenCount}</span>
+            <Users size={12} />
           </div>
         )}
-      </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0 text-right">
-        {/* Show only the first name */}
-        <h4
-          className="text-sm font-bold text-slate-800 leading-snug break-words"
-          style={{ direction: 'rtl', wordBreak: 'break-word' }}
-        >
-          {firstName}
-        </h4>
-
-        {/* Age & Marital Info */}
-        <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-          <div>{ageDisplay}</div>
-
-          {child.quickStats.isMarried && child.quickStats.spouse && (
-            <div className="flex items-center gap-1 text-red-600 mt-0.5">
-              <Heart size={10} />
-              <span className="truncate">{child.quickStats.spouse}</span>
+        <div className="relative w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center">
+          <User className="w-4 h-4 text-slate-600" />
+          {child.quickStats.hasChildren && (
+            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 text-white text-[8px] flex items-center justify-center border border-white rounded-full">
+              👥
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex flex-col gap-1 items-end mt-1">
-        {child.quickStats.childrenCount > 0 && (
-          <span className="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium whitespace-nowrap">
-            👥 {child.quickStats.childrenCount}
-          </span>
-        )}
-        {child.displayData.status === 'deceased' && (
-          <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 font-medium">
-            <Skull className="w-3 h-3 inline-block" />
-          </span>
-        )}
+      {/* Right Side: Name */}
+      <div className="flex-1 min-w-0 text-sm font-bold text-slate-800 text-right leading-snug">
+        {firstName}
       </div>
     </div>
   );
