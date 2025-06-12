@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Grid, List, Users, Eye } from 'lucide-react';
+import { ChevronRight, Grid, List, Users, Eye, Search, Filter, SortAsc, Heart } from 'lucide-react';
 import { ChildCard } from '../../services/childrenService';
 import { MiniChildCard } from './MiniChildCard';
 
@@ -22,9 +22,17 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
 }) => {
   const [sortBy, setSortBy] = useState<'name' | 'age' | 'children'>('age');
   const [filterStatus, setFilterStatus] = useState<'all' | 'alive' | 'deceased'>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const sortedAndFilteredChildren = React.useMemo(() => {
     let filtered = children;
+
+    // Apply search filter first
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter(child => 
+        child.displayData.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
     // Apply status filter
     if (filterStatus !== 'all') {
@@ -48,31 +56,44 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
     });
 
     return filtered;
-  }, [children, sortBy, filterStatus]);
+  }, [children, sortBy, filterStatus, searchTerm]);
 
   const visibleChildren = sortedAndFilteredChildren.slice(0, maxVisible);
   const hasMore = sortedAndFilteredChildren.length > maxVisible;
 
   if (children.length === 0) {
     return (
-      <div className="no-children-message">
-        <Users className="no-children-icon" />
+      <div className="text-center py-5 text-slate-500">
+        <Users className="w-8 h-8 mx-auto mb-3 text-slate-300" />
         <p>لا يوجد أطفال مسجلون</p>
       </div>
     );
   }
 
   return (
-    <div className="children-preview-container">
-      {/* Controls */}
-      <div className="children-controls">
-        <div className="controls-left">
-          <div className="filter-group">
-            <label>الترتيب:</label>
+    <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      {/* Search and Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-3 pb-3 border-b border-slate-200">
+        <div className="flex gap-3 items-center w-full md:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 md:w-48">
+            <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="بحث..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pr-8 pl-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <SortAsc className="w-3.5 h-3.5 text-slate-500" />
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="control-select"
+              className="px-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             >
               <option value="age">العمر</option>
               <option value="name">الاسم</option>
@@ -80,12 +101,13 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>الحالة:</label>
+          {/* Filter Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
             <select 
               value={filterStatus} 
               onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="control-select"
+              className="px-2 py-1.5 border border-slate-300 rounded-md text-xs bg-white text-slate-700 cursor-pointer focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             >
               <option value="all">الكل</option>
               <option value="alive">أحياء</option>
@@ -94,17 +116,22 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
           </div>
         </div>
 
-        <div className="controls-right">
-          <div className="view-toggle">
+        {/* View Mode Toggles */}
+        <div className="flex items-center gap-2 self-end md:self-auto">
+          <div className="flex bg-white border border-slate-300 rounded-md overflow-hidden">
             <button
-              className={`toggle-btn ${displayMode === 'mini' ? 'active' : ''}`}
+              className={`px-2 py-1.5 border-none bg-transparent cursor-pointer transition-all duration-200 text-slate-600 hover:bg-slate-100 ${
+                displayMode === 'mini' ? 'bg-emerald-500 text-white' : ''
+              }`}
               onClick={() => onDisplayModeChange('mini')}
               title="عرض مصغر"
             >
               <List size={16} />
             </button>
             <button
-              className={`toggle-btn ${displayMode === 'detailed' ? 'active' : ''}`}
+              className={`px-2 py-1.5 border-none bg-transparent cursor-pointer transition-all duration-200 text-slate-600 hover:bg-slate-100 ${
+                displayMode === 'detailed' ? 'bg-emerald-500 text-white' : ''
+              }`}
               onClick={() => onDisplayModeChange('detailed')}
               title="عرض تفصيلي"
             >
@@ -115,17 +142,21 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
       </div>
 
       {/* Results Summary */}
-      <div className="results-summary">
+      <div className="text-xs text-slate-600 mb-3 flex gap-1.5 items-center">
         <span>عرض {visibleChildren.length} من {sortedAndFilteredChildren.length} طفل</span>
         {sortedAndFilteredChildren.length !== children.length && (
-          <span className="filter-note">
+          <span className="text-slate-400 italic">
             (مفلتر من {children.length} إجمالي)
           </span>
         )}
       </div>
       
-      {/* Children Grid - Landscape Optimized */}
-      <div className={`children-grid ${displayMode} landscape`}>
+      {/* Children Grid - Optimized for all screen sizes */}
+      <div className={`grid gap-2 ${
+        displayMode === 'mini' 
+          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+          : 'grid-cols-1'
+      }`}>
         {visibleChildren.map(child => (
           <MiniChildCard 
             key={child.id}
@@ -138,9 +169,9 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
       
       {/* Show More Button */}
       {hasMore && (
-        <div className="show-more-container">
+        <div className="mt-4 text-center">
           <button 
-            className="show-more-button"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-none rounded-lg font-semibold text-xs cursor-pointer transition-all duration-300 shadow-sm hover:-translate-y-0.5 hover:shadow-md hover:from-emerald-600 hover:to-emerald-700"
             onClick={onShowAll}
           >
             <Eye size={16} />
@@ -150,178 +181,13 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
         </div>
       )}
 
-      <style jsx>{`
-        .children-preview-container {
-          margin-top: 12px;
-          padding: 12px;
-          background: #f8fafc;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-        }
-
-        .no-children-message {
-          text-align: center;
-          padding: 20px 10px;
-          color: #64748b;
-        }
-
-        .no-children-icon {
-          width: 32px;
-          height: 32px;
-          margin: 0 auto 12px;
-          color: #cbd5e1;
-        }
-
-        .children-controls {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .controls-left {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-        }
-
-        .controls-right {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .filter-group {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .filter-group label {
-          font-size: 12px;
-          font-weight: 500;
-          color: #475569;
-          white-space: nowrap;
-        }
-
-        .control-select {
-          padding: 4px 8px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 12px;
-          background: white;
-          color: #374151;
-          cursor: pointer;
-        }
-
-        .control-select:focus {
-          outline: none;
-          border-color: #10b981;
-          box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
-        }
-
-        .view-toggle {
-          display: flex;
-          background: white;
-          border-radius: 6px;
-          border: 1px solid #d1d5db;
-          overflow: hidden;
-        }
-
-        .toggle-btn {
-          padding: 6px 8px;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: #64748b;
-        }
-
-        .toggle-btn:hover {
-          background: #f1f5f9;
-        }
-
-        .toggle-btn.active {
-          background: #10b981;
-          color: white;
-        }
-
-        .results-summary {
-          font-size: 12px;
-          color: #64748b;
-          margin-bottom: 12px;
-          display: flex;
-          gap: 6px;
-          align-items: center;
-        }
-
-        .filter-note {
-          color: #94a3b8;
-          font-style: italic;
-        }
-
-        .children-grid {
-          display: grid;
-          gap: 8px;
-        }
-
-        .children-grid.mini {
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        }
-
-        .children-grid.mini.landscape {
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        }
-
-        .children-grid.detailed {
-          grid-template-columns: 1fr;
-        }
-
-        .show-more-container {
-          margin-top: 16px;
-          text-align: center;
-        }
-
-        .show-more-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-        }
-
-        .show-more-button:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-          background: linear-gradient(135deg, #059669, #047857);
-        }
-
-        @media (max-width: 768px) {
-          .children-controls {
-            flex-direction: column;
-            gap: 8px;
-            align-items: stretch;
-          }
-
-          .controls-left {
-            justify-content: space-between;
-          }
-
-          .controls-right {
-            justify-content: center;
-          }
-        }
-      `}</style>
+      {/* No Results Message */}
+      {sortedAndFilteredChildren.length === 0 && (
+        <div className="text-center py-6">
+          <Search className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+          <p className="text-slate-500 text-sm">لا توجد نتائج تطابق معايير البحث</p>
+        </div>
+      )}
     </div>
   );
 };

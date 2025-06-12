@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Heart, Calendar, MapPin, Award, User, Phone, FileText } from 'lucide-react';
+import { Users, Heart, Calendar, MapPin, Award, User, Phone, FileText, Skull, ChevronRight } from 'lucide-react';
 import { ChildCard } from '../../services/childrenService';
 
 interface MiniChildCardProps {
@@ -29,46 +29,53 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
   if (displayMode === 'detailed') {
     return (
       <div 
-        className={`detailed-child-card ${child.displayData.status}`}
+        className={`bg-gradient-to-br from-white to-slate-50 border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all duration-300 shadow-sm hover:-translate-y-0.5 hover:shadow-lg hover:border-slate-300 mb-3 ${
+          child.displayData.status === 'deceased' ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300' : ''
+        }`}
         onClick={onClick}
         style={{ 
-          borderLeftColor: child.visualTheme.inheritedColor,
+          borderRightColor: child.visualTheme.inheritedColor,
+          borderRightWidth: '4px'
         }}
       >
         {/* Header */}
-        <div className="card-header">
-          <div className="child-avatar">
-            <div className="avatar-placeholder">
-              <User className="avatar-icon" />
+        <div className="flex items-start gap-3 mb-4">
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+              <User className="w-6 h-6 text-slate-600" />
             </div>
             {child.quickStats.hasChildren && (
-              <div className="has-children-indicator">
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center text-white border-2 border-white">
                 <Users size={10} />
               </div>
             )}
           </div>
           
-          <div className="child-main-info">
-            <h4 className="child-name">{child.displayData.name}</h4>
-            <div className="child-meta">
-              <span className={`status-badge ${child.displayData.status}`}>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-base font-bold text-slate-800 mb-1.5 truncate">{child.displayData.name}</h4>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold border ${
+                child.displayData.status === 'alive' 
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                  : 'bg-gray-100 text-gray-700 border-gray-200'
+              }`}>
                 {child.displayData.status === 'alive' ? 'على قيد الحياة' : 'متوفى'}
               </span>
-              <span className="generation-badge">
+              <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                 الجيل {child.visualTheme.generationLevel}
               </span>
             </div>
           </div>
 
-          <div className="quick-stats">
+          <div className="flex flex-col gap-1">
             {child.quickStats.childrenCount > 0 && (
-              <div className="stat-item">
+              <div className="flex items-center gap-1 px-1.5 py-1 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
                 <Users size={14} />
                 <span>{child.quickStats.childrenCount}</span>
               </div>
             )}
             {child.quickStats.achievementsCount > 0 && (
-              <div className="stat-item">
+              <div className="flex items-center gap-1 px-1.5 py-1 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
                 <Award size={14} />
                 <span>{child.quickStats.achievementsCount}</span>
               </div>
@@ -77,452 +84,133 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
         </div>
 
         {/* Details Grid */}
-        <div className="details-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
           {child.fullData.birthDate && (
-            <div className="detail-item">
-              <Calendar className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <Calendar className="w-4 h-4 text-slate-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">تاريخ الميلاد</span>
-                <span className="detail-value">{formatDate(child.fullData.birthDate)}</span>
+                <span className="block text-xs text-slate-600 font-medium">تاريخ الميلاد</span>
+                <span className="block text-xs text-slate-800 font-semibold">{formatDate(child.fullData.birthDate)}</span>
               </div>
             </div>
           )}
 
           {child.fullData.location && (
-            <div className="detail-item">
-              <MapPin className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <MapPin className="w-4 h-4 text-slate-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">مكان الميلاد</span>
-                <span className="detail-value">{child.fullData.location}</span>
+                <span className="block text-xs text-slate-600 font-medium">مكان الميلاد</span>
+                <span className="block text-xs text-slate-800 font-semibold">{child.fullData.location}</span>
               </div>
             </div>
           )}
 
           {child.fullData.position && (
-            <div className="detail-item">
-              <User className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <User className="w-4 h-4 text-slate-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">المنصب</span>
-                <span className="detail-value">{child.fullData.position}</span>
+                <span className="block text-xs text-slate-600 font-medium">المنصب</span>
+                <span className="block text-xs text-slate-800 font-semibold">{child.fullData.position}</span>
               </div>
             </div>
           )}
 
           {child.fullData.nationalId && (
-            <div className="detail-item">
-              <FileText className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <FileText className="w-4 h-4 text-slate-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">الهوية الوطنية</span>
-                <span className="detail-value" dir="ltr">{child.fullData.nationalId}</span>
+                <span className="block text-xs text-slate-600 font-medium">الهوية الوطنية</span>
+                <span className="block text-xs text-slate-800 font-semibold" dir="ltr">{child.fullData.nationalId}</span>
               </div>
             </div>
           )}
 
           {child.quickStats.isMarried && child.quickStats.spouse && (
-            <div className="detail-item marriage-info">
-              <Heart className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg border border-red-200 md:col-span-2">
+              <Heart className="w-4 h-4 text-red-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">الزوجة</span>
-                <span className="detail-value">{child.quickStats.spouse}</span>
+                <span className="block text-xs text-red-600 font-medium">الزوجة</span>
+                <span className="block text-xs text-red-800 font-semibold">{child.quickStats.spouse}</span>
               </div>
             </div>
           )}
 
           {child.fullData.education && (
-            <div className="detail-item">
-              <Award className="detail-icon" size={16} />
+            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <Award className="w-4 h-4 text-slate-600 flex-shrink-0" />
               <div>
-                <span className="detail-label">التعليم</span>
-                <span className="detail-value">{child.fullData.education}</span>
+                <span className="block text-xs text-slate-600 font-medium">التعليم</span>
+                <span className="block text-xs text-slate-800 font-semibold">{child.fullData.education}</span>
               </div>
             </div>
           )}
         </div>
 
         {child.fullData.notes && (
-          <div className="notes-section">
-            <h5>ملاحظات</h5>
-            <p>{child.fullData.notes}</p>
+          <div className="p-2.5 bg-yellow-50 rounded-lg border border-yellow-200">
+            <h5 className="text-xs font-semibold text-yellow-800 mb-1.5">ملاحظات</h5>
+            <p className="text-xs text-yellow-700 leading-relaxed">{child.fullData.notes}</p>
           </div>
         )}
 
-        <style jsx>{`
-          .detailed-child-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 2px solid #e2e8f0;
-            border-left: 4px solid;
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 12px;
-          }
-
-          .detailed-child-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border-color: #cbd5e1;
-          }
-
-          .detailed-child-card.deceased {
-            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-            border-color: #d1d5db;
-          }
-
-          .card-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
-          }
-
-          .child-avatar {
-            position: relative;
-            flex-shrink: 0;
-          }
-
-          .avatar-placeholder {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .avatar-icon {
-            color: #64748b;
-            width: 24px;
-            height: 24px;
-          }
-
-          .has-children-indicator {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 16px;
-            height: 16px;
-            background: #10b981;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            border: 2px solid white;
-          }
-
-          .child-main-info {
-            flex: 1;
-            min-width: 0;
-          }
-
-          .child-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0 0 6px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .child-meta {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-          }
-
-          .status-badge, .generation-badge {
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 600;
-          }
-
-          .status-badge.alive {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-          }
-
-          .status-badge.deceased {
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-          }
-
-          .generation-badge {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
-          }
-
-          .quick-stats {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-
-          .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 6px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #475569;
-          }
-
-          .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 8px;
-            margin-bottom: 12px;
-          }
-
-          .detail-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-          }
-
-          .detail-item.marriage-info {
-            background: #fef7f7;
-            border-color: #fecaca;
-          }
-
-          .detail-icon {
-            color: #64748b;
-            flex-shrink: 0;
-          }
-
-          .detail-item.marriage-info .detail-icon {
-            color: #dc2626;
-          }
-
-          .detail-label {
-            display: block;
-            font-size: 10px;
-            color: #64748b;
-            font-weight: 500;
-            margin-bottom: 1px;
-          }
-
-          .detail-value {
-            display: block;
-            font-size: 12px;
-            color: #1e293b;
-            font-weight: 600;
-          }
-
-          .notes-section {
-            margin-top: 12px;
-            padding: 10px;
-            background: #fffbeb;
-            border-radius: 8px;
-            border: 1px solid #fde68a;
-          }
-
-          .notes-section h5 {
-            margin: 0 0 6px 0;
-            font-size: 12px;
-            font-weight: 600;
-            color: #92400e;
-          }
-
-          .notes-section p {
-            margin: 0;
-            font-size: 11px;
-            color: #78350f;
-            line-height: 1.4;
-          }
-
-          @media (max-width: 768px) {
-            .details-grid {
-              grid-template-columns: 1fr;
-            }
-            
-            .card-header {
-              flex-direction: column;
-              gap: 8px;
-            }
-            
-            .quick-stats {
-              flex-direction: row;
-            }
-          }
-        `}</style>
+        {/* View Details Button */}
+        <div className="mt-3 text-center">
+          <button className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors">
+            <span>عرض التفاصيل</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Mini card mode - Landscape optimized
+  // Mini card mode - Optimized for all screen sizes
   return (
     <div 
-      className={`mini-child-card ${child.displayData.status}`}
+      className={`bg-white border border-slate-200 rounded-lg p-2 cursor-pointer transition-all duration-300 flex items-center gap-2 shadow-sm hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300 ${
+        child.displayData.status === 'deceased' ? 'bg-gray-50 border-gray-300' : ''
+      }`}
       onClick={onClick}
       style={{ 
-        borderLeftColor: child.visualTheme.inheritedColor,
+        borderRightColor: child.visualTheme.inheritedColor,
+        borderRightWidth: '3px'
       }}
     >
-      <div className="child-avatar">
-        <div className="avatar-placeholder">
-          <User className="avatar-icon" />
+      <div className="relative flex-shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+          <User className="w-4 h-4 text-slate-600" />
         </div>
         {child.quickStats.hasChildren && (
-          <div className="has-children-indicator">
+          <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-white border border-white">
             <Users size={8} />
           </div>
         )}
       </div>
       
-      <div className="child-info">
-        <h4 className="child-name">{child.displayData.name}</h4>
-        <p className="child-age">{ageDisplay}</p>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-xs font-semibold text-slate-800 mb-0.5 truncate">{child.displayData.name}</h4>
+        <p className="text-xs text-slate-600 mb-0.5 truncate">{ageDisplay}</p>
         
         {child.quickStats.isMarried && child.quickStats.spouse && (
-          <div className="marriage-indicator">
+          <div className="flex items-center gap-0.5 text-xs text-red-600 mt-0.5">
             <Heart size={8} />
-            <span>{child.quickStats.spouse}</span>
+            <span className="truncate max-w-20">{child.quickStats.spouse}</span>
           </div>
         )}
       </div>
       
-      <div className="child-stats">
+      <div className="flex flex-col gap-0.5 items-end">
         {child.quickStats.childrenCount > 0 && (
-          <span className="stat-badge">
+          <span className="text-xs px-1 py-0.5 bg-slate-100 rounded text-slate-600 font-medium whitespace-nowrap">
             👥 {child.quickStats.childrenCount}
           </span>
         )}
+        {child.displayData.status === 'deceased' && (
+          <span className="text-xs px-1 py-0.5 bg-gray-100 rounded text-gray-600 font-medium whitespace-nowrap">
+            <Skull className="w-3 h-3 inline-block" />
+          </span>
+        )}
       </div>
-
-      <style jsx>{`
-        .mini-child-card {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-left: 2px solid;
-          border-radius: 8px;
-          padding: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .mini-child-card:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          border-color: #cbd5e1;
-        }
-
-        .mini-child-card.deceased {
-          background: #fafafa;
-          border-color: #d1d5db;
-        }
-
-        .child-avatar {
-          position: relative;
-          flex-shrink: 0;
-        }
-
-        .avatar-placeholder {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .avatar-icon {
-          color: #64748b;
-          width: 16px;
-          height: 16px;
-        }
-
-        .has-children-indicator {
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 14px;
-          height: 14px;
-          background: #10b981;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          border: 1px solid white;
-        }
-
-        .child-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .child-name {
-          font-size: 12px;
-          font-weight: 600;
-          color: #1e293b;
-          margin: 0 0 2px 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .child-age, .child-title {
-          font-size: 10px;
-          color: #64748b;
-          margin: 0 0 2px 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .marriage-indicator {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          font-size: 9px;
-          color: #dc2626;
-          margin-top: 2px;
-        }
-
-        .marriage-indicator span {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 80px;
-        }
-
-        .child-stats {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          align-items: flex-end;
-        }
-
-        .stat-badge {
-          font-size: 9px;
-          padding: 1px 4px;
-          background: #f1f5f9;
-          border-radius: 4px;
-          color: #475569;
-          font-weight: 500;
-          white-space: nowrap;
-        }
-      `}</style>
     </div>
   );
 };

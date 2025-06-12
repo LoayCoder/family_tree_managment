@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Calendar, Phone, Edit3, Trash2, Heart, Skull, MapPin, FileText } from 'lucide-react';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
+import ResponsiveText from './responsive/ResponsiveText';
 
 interface MemberCardProps {
   member: FamilyMemberWithLevel;
@@ -56,9 +57,9 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
 
   const getStatusIcon = (isAlive: boolean | undefined) => {
     if (isAlive === false) {
-      return <Skull className="w-4 h-4 text-gray-600" />;
+      return <Skull className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />;
     }
-    return <Heart className="w-4 h-4 text-emerald-600 fill-current" />;
+    return <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 fill-current" />;
   };
 
   const getStatusText = (isAlive: boolean | undefined) => {
@@ -78,29 +79,31 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
   };
 
   return (
-    <div className={`bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] border border-gray-100 overflow-hidden ${
+    <div className={`bg-white rounded-xl sm:rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] border border-gray-100 overflow-hidden ${
       member.is_alive === false ? 'opacity-95 bg-gradient-to-br from-gray-50 to-white' : 'bg-gradient-to-br from-white to-gray-50'
     }`}>
       {/* Header with level indicator */}
-      <div className={`h-3 bg-gradient-to-r ${getLevelGradient(member.level)} relative`}>
+      <div className={`h-2 sm:h-3 bg-gradient-to-r ${getLevelGradient(member.level)} relative`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
       </div>
       
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Member Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className={`p-4 rounded-2xl bg-gradient-to-r ${getLevelGradient(member.level)} shadow-lg`}>
-              <User className="w-7 h-7 text-white" />
+        <div className="flex items-start justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r ${getLevelGradient(member.level)} shadow-lg`}>
+              <User className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-1">{member.name}</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              <ResponsiveText as="h3" size="xl" weight="bold" color="gray-800" className="mb-1">
+                {member.name}
+              </ResponsiveText>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                   الجيل {member.level + 1}
                 </span>
                 {/* Status Badge */}
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border flex items-center gap-1 ${getStatusColor(member.is_alive)}`}>
+                <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium border flex items-center gap-1 ${getStatusColor(member.is_alive)}`}>
                   {getStatusIcon(member.is_alive)}
                   {getStatusText(member.is_alive)}
                 </span>
@@ -109,33 +112,33 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
           </div>
           
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <button
               onClick={() => onEdit(member.id)}
-              className="p-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200 hover:scale-110"
+              className="p-2 sm:p-3 text-emerald-600 hover:bg-emerald-50 rounded-lg sm:rounded-xl transition-all duration-200 hover:scale-110"
               title="تعديل"
             >
-              <Edit3 className="w-5 h-5" />
+              <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => onDelete(member.id)}
-              className="p-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-110"
+              className="p-2 sm:p-3 text-red-600 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all duration-200 hover:scale-110"
               title="حذف"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* Member Details Grid */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Age and Birth Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
-            <div className="flex items-center gap-3 mb-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              <span className="font-semibold text-blue-800">معلومات العمر</span>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-blue-100">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+              <span className="font-semibold text-blue-800 text-sm sm:text-base">معلومات العمر</span>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">العمر:</span>
                 <span className="font-medium text-gray-800">
@@ -154,12 +157,12 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
 
           {/* Death Information (if applicable) */}
           {member.is_alive === false && member.date_of_death && (
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-200">
-              <div className="flex items-center gap-3 mb-2">
-                <Skull className="w-5 h-5 text-gray-600" />
-                <span className="font-semibold text-gray-700">معلومات الوفاة</span>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-200">
+              <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+                <Skull className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                <span className="font-semibold text-gray-700 text-sm sm:text-base">معلومات الوفاة</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
+              <div className="flex justify-between items-center text-xs sm:text-sm">
                 <span className="text-gray-600">تاريخ الوفاة:</span>
                 <span className="font-medium text-gray-800">{formatDate(member.date_of_death)}</span>
               </div>
@@ -167,15 +170,15 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
           )}
 
           {/* Gender and Contact Info */}
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:gap-3">
             {/* Gender */}
             {member.gender && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-600">الجنس:</span>
+              <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                  <span className="text-xs sm:text-sm text-gray-600">الجنس:</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getGenderColor(member.gender)}`}>
+                <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium border ${getGenderColor(member.gender)}`}>
                   {member.gender}
                 </span>
               </div>
@@ -183,24 +186,24 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
 
             {/* Phone */}
             {member.phone && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-600">الهاتف:</span>
+              <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                  <span className="text-xs sm:text-sm text-gray-600">الهاتف:</span>
                 </div>
-                <span className="font-medium text-gray-800 font-mono" dir="ltr">{member.phone}</span>
+                <span className="font-medium text-gray-800 font-mono text-xs sm:text-sm" dir="ltr">{member.phone}</span>
               </div>
             )}
           </div>
 
           {/* Notes */}
           {member.notes && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-100">
-              <div className="flex items-center gap-3 mb-3">
-                <FileText className="w-5 h-5 text-amber-600" />
-                <span className="font-semibold text-amber-800">ملاحظات</span>
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-amber-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                <span className="font-semibold text-amber-800 text-sm sm:text-base">ملاحظات</span>
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed bg-white/50 p-3 rounded-xl">
+              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed bg-white/50 p-2 sm:p-3 rounded-lg sm:rounded-xl">
                 {member.notes}
               </p>
             </div>
@@ -208,8 +211,8 @@ export default function MemberCard({ member, onEdit, onDelete }: MemberCardProps
         </div>
 
         {/* Footer with timestamps */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <div className="flex justify-between items-center text-xs text-gray-500">
+        <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-100">
+          <div className="flex justify-between items-center text-xxs sm:text-xs text-gray-500">
             <span>تم الإنشاء: {member.created_at ? formatDate(member.created_at) : 'غير محدد'}</span>
             {member.updated_at && member.updated_at !== member.created_at && (
               <span>آخر تحديث: {formatDate(member.updated_at)}</span>

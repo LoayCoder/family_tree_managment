@@ -25,6 +25,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
   const [children, setChildren] = useState<ChildCard[]>([]);
   const [childrenCount, setChildrenCount] = useState(initialChildrenCount);
   const [displayMode, setDisplayMode] = useState<'mini' | 'detailed'>('mini');
+  const [error, setError] = useState<string | null>(null);
 
   // Load children count on mount
   useEffect(() => {
@@ -39,6 +40,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
       setChildrenCount(count);
     } catch (error) {
       console.error('Error loading children count:', error);
+      setError('فشل في تحميل عدد الأبناء');
     }
   };
 
@@ -46,6 +48,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
     if (children.length > 0) return; // Already loaded
 
     setDisplayState(prev => ({ ...prev, childrenLoadState: 'loading' }));
+    setError(null);
     
     try {
       const childrenData = await childrenService.getPersonChildrenWithStats(personId);
@@ -58,6 +61,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
       }));
     } catch (error) {
       console.error('Error loading children:', error);
+      setError('فشل في تحميل بيانات الأبناء');
       setDisplayState(prev => ({ ...prev, childrenLoadState: 'error' }));
     }
   };
@@ -85,6 +89,12 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
   const handleChildSelect = (child: ChildCard) => {
     console.log('Selected child:', child.displayData.name);
     // This could navigate to the child's detail page or open a modal
+    // For now, just log the selection
+    
+    // In a real implementation, you might do:
+    // navigate(`/person/${child.id}`);
+    // or
+    // openModal(child);
   };
 
   const handleDisplayModeChange = (mode: 'mini' | 'detailed') => {
@@ -96,7 +106,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
   }
 
   return (
-    <div className="children-display-manager">
+    <div className="children-display-manager mt-3">
       {/* Children Counter */}
       <ChildrenCounter
         count={childrenCount}
@@ -118,50 +128,17 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
       )}
 
       {/* Error State */}
-      {displayState.childrenLoadState === 'error' && (
-        <div className="error-state">
-          <p>حدث خطأ في تحميل بيانات الأطفال</p>
-          <button onClick={loadChildren} className="retry-button">
+      {error && (
+        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+          <p className="text-red-600 text-sm">{error}</p>
+          <button 
+            onClick={loadChildren} 
+            className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+          >
             إعادة المحاولة
           </button>
         </div>
       )}
-
-      <style jsx>{`
-        .children-display-manager {
-          margin-top: 12px;
-        }
-
-        .error-state {
-          margin-top: 16px;
-          padding: 16px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          border-radius: 12px;
-          text-align: center;
-        }
-
-        .error-state p {
-          color: #dc2626;
-          margin: 0 0 12px 0;
-          font-size: 14px;
-        }
-
-        .retry-button {
-          padding: 8px 16px;
-          background: #dc2626;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 13px;
-          cursor: pointer;
-          transition: background 0.2s ease;
-        }
-
-        .retry-button:hover {
-          background: #b91c1c;
-        }
-      `}</style>
     </div>
   );
 };
