@@ -1,6 +1,5 @@
 import React from 'react';
 import { TreePine, ArrowLeft, Home } from 'lucide-react';
-import FamilyTreeEntryForm from './FamilyTreeEntryForm';
 import App from '../App';
 
 export default function FamilyTreePage() {
@@ -41,12 +40,26 @@ export default function FamilyTreePage() {
             شجرة آل عمير
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            أدخل معلومات العائلة بالتفصيل لبناء شجرة العائلة الخاصة بك
+            مرحباً بك في نظام إدارة شجرة آل عمير
           </p>
         </div>
 
-        {/* Form */}
-        <FamilyTreeEntryForm />
+        {/* Content */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100 max-w-4xl mx-auto">
+          <div className="text-center py-8">
+            <TreePine className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">تم إزالة نموذج إدخال شجرة العائلة</h2>
+            <p className="text-gray-600 mb-6">
+              يمكنك العودة إلى النظام الرئيسي لإدارة بيانات العائلة من خلال الأزرار أعلاه
+            </p>
+            <button
+              onClick={() => setShowMainApp(true)}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-md"
+            >
+              العودة للنظام الرئيسي
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
