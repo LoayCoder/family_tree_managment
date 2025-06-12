@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { User, Calendar, MapPin, Phone, FileText, Save, X, Building, Hash, AlertCircle, Image, Skull, Heart, Trash2, Plus, Minus, Users, UserPlus, UserMinus, Check, Info } from 'lucide-react';
-import { arabicFamilyService, PersonWithDetails, Location, Branch } from '../../services/arabicFamilyService';
+import { User, Calendar, MapPin, FileText, Save, X, Building, Hash, Heart, Skull, Image, Trash2, AlertCircle, Plus, Users, UserPlus, ChevronDown, ChevronUp, Crown } from 'lucide-react';
+import { arabicFamilyService, Location, Branch, PersonWithDetails } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
 
 interface PersonFormData {
@@ -13,7 +13,7 @@ interface PersonFormData {
   مكان_الوفاة: number | '';
   رقم_هوية_وطنية: string;
   الجنس: 'ذكر' | 'أنثى';
-  الحالة_الاجتماعية: 'أعزب' | 'متزوج' | 'مطلق' | 'أرمل';
+  الحالة_الاجتماعية: 'أعزب' | 'متزوج' | 'مطلق' | 'أرمل' | '';
   المنصب: string;
   مستوى_التعليم: string;
   father_id: number | '';
@@ -24,27 +24,33 @@ interface PersonFormData {
   is_deceased: boolean;
   has_birth_data: boolean;
   has_death_data: boolean;
-  additional_names: string[];
-  ancestors: {
-    name: string;
-    notes: string;
-  }[];
-  wives: {
-    name: string;
-    father_name: string;
-    family_name: string;
-    birth_date: string;
-    is_deceased: boolean;
-    death_date: string;
-    notes: string;
-  }[];
+  
+  // Root family information
+  root_father_name: string;
+  root_grandfather_name: string;
+  root_greatgrandfather_name: string;
+  root_father_note: string;
+  root_grandfather_note: string;
+  root_greatgrandfather_note: string;
+  
+  // Marriage information
+  is_married: boolean;
+  
+  // Children information
   children: {
     name: string;
     gender: 'ذكر' | 'أنثى';
     birth_date: string;
-    is_deceased: boolean;
-    death_date: string;
-    mother_id: number | '';
+    notes: string;
+  }[];
+  
+  // Wives information
+  wives: {
+    name: string;
+    father_name: string;
+    family_name: string;
+    marriage_date: string;
+    status: 'متزوجة' | 'مطلقة' | 'أرملة';
     notes: string;
   }[];
 }
@@ -52,7 +58,7 @@ interface PersonFormData {
 interface PersonFormProps {
   onSuccess: () => void;
   onCancel: () => void;
-  editData?: Partial<PersonWithDetails>;
+  editData?: any; // Person data for editing
 }
 
 interface Woman {
@@ -60,23 +66,26 @@ interface Woman {
   الاسم_الأول: string;
   اسم_الأب?: string;
   اسم_العائلة?: string;
+  الحالة_الاجتماعية?: string;
 }
 
 export default function PersonForm({ onSuccess, onCancel, editData }: PersonFormProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [persons, setPersons] = useState<PersonWithDetails[]>([]);
-  const [women, setWomen] = useState<Woman[]>([]);
   const [fatherWives, setFatherWives] = useState<Woman[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [nationalIdError, setNationalIdError] = useState<string>('');
   const [isCheckingNationalId, setIsCheckingNationalId] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showChildrenSection, setShowChildrenSection] = useState(false);
+  const [showWivesSection, setShowWivesSection] = useState(false);
+  const [showRootFamilySection, setShowRootFamilySection] = useState(false);
 
   const { register, handleSubmit, watch, setValue, control, formState: { errors }, setError, clearErrors } = useForm<PersonFormData>({
     defaultValues: editData ? {
-      الاسم_الأول: editData.الاسم_الأول || '',
+      الاسم_الأول: editData.الاسم_الأول,
       is_root: editData.is_root || false,
       تاريخ_الميلاد: editData.تاريخ_الميلاد || '',
       تاريخ_الوفاة: editData.تاريخ_الوفاة || '',
@@ -84,7 +93,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       مكان_الوفاة: editData.مكان_الوفاة || '',
       رقم_هوية_وطنية: editData.رقم_هوية_وطنية || '',
       الجنس: editData.الجنس || 'ذكر',
-      الحالة_الاجتماعية: editData.الحالة_الاجتماعية || 'أعزب',
+      الحالة_الاجتماعية: editData.الحالة_الاجتماعية || '',
       المنصب: editData.المنصب || '',
       مستوى_التعليم: editData.مستوى_التعليم || '',
       father_id: editData.father_id || '',
@@ -95,33 +104,37 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       is_deceased: !!editData.تاريخ_الوفاة,
       has_birth_data: !!editData.تاريخ_الميلاد,
       has_death_data: !!editData.تاريخ_الوفاة,
-      additional_names: [],
-      ancestors: [],
+      is_married: editData.الحالة_الاجتماعية === 'متزوج',
+      children: [],
       wives: [],
-      children: []
+      root_father_name: '',
+      root_grandfather_name: '',
+      root_greatgrandfather_name: '',
+      root_father_note: '',
+      root_grandfather_note: '',
+      root_greatgrandfather_note: ''
     } : {
       الجنس: 'ذكر',
       is_root: false,
-      الحالة_الاجتماعية: 'أعزب',
       is_deceased: false,
       has_birth_data: false,
       has_death_data: false,
-      additional_names: [],
-      ancestors: [],
+      is_married: false,
+      children: [],
       wives: [],
-      children: []
+      root_father_name: '',
+      root_grandfather_name: '',
+      root_greatgrandfather_name: '',
+      root_father_note: '',
+      root_grandfather_note: '',
+      root_greatgrandfather_note: ''
     }
   });
 
-  // Setup field arrays for dynamic fields
-  const { fields: additionalNamesFields, append: appendAdditionalName, remove: removeAdditionalName } = useFieldArray({
+  // Set up field arrays for children and wives
+  const { fields: childrenFields, append: appendChild, remove: removeChild } = useFieldArray({
     control,
-    name: "additional_names"
-  });
-
-  const { fields: ancestorsFields, append: appendAncestor, remove: removeAncestor } = useFieldArray({
-    control,
-    name: "ancestors"
+    name: "children"
   });
 
   const { fields: wivesFields, append: appendWife, remove: removeWife } = useFieldArray({
@@ -129,34 +142,43 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     name: "wives"
   });
 
-  const { fields: childrenFields, append: appendChild, remove: removeChild } = useFieldArray({
-    control,
-    name: "children"
-  });
-
-  // Watch form values for conditional rendering
-  const watchDeathDate = watch('تاريخ_الوفاة');
   const watchIsRoot = watch('is_root');
-  const watchNationalId = watch('رقم_هوية_وطنية');
+  const watchFatherId = watch('father_id');
   const watchIsDeceased = watch('is_deceased');
   const watchHasBirthData = watch('has_birth_data');
   const watchHasDeathData = watch('has_death_data');
+  const watchIsMarried = watch('is_married');
   const watchMaritalStatus = watch('الحالة_الاجتماعية');
+  const watchNationalId = watch('رقم_هوية_وطنية');
   const watchImageUrl = watch('صورة_شخصية');
-  const watchFatherId = watch('father_id');
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
+  // Update sections visibility based on form state
+  useEffect(() => {
+    setShowRootFamilySection(watchIsRoot);
+  }, [watchIsRoot]);
+
+  useEffect(() => {
+    if (watchMaritalStatus === 'متزوج' || watchIsMarried) {
+      setShowWivesSection(true);
+      setShowChildrenSection(true);
+      setValue('is_married', true);
+    } else {
+      setValue('is_married', false);
+    }
+  }, [watchMaritalStatus, watchIsMarried, setValue]);
+
   // Load father's wives when father is selected
   useEffect(() => {
-    if (watchFatherId && watchFatherId !== '') {
+    if (watchFatherId && !watchIsRoot) {
       loadFatherWives(Number(watchFatherId));
     } else {
       setFatherWives([]);
     }
-  }, [watchFatherId]);
+  }, [watchFatherId, watchIsRoot]);
 
   // Debounced national ID validation
   useEffect(() => {
@@ -190,13 +212,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     }
   }, [watchIsDeceased, setValue]);
 
-  // Load existing wives and children if editing
-  useEffect(() => {
-    if (editData?.id) {
-      loadExistingWivesAndChildren(editData.id);
-    }
-  }, [editData?.id]);
-
   const loadInitialData = async () => {
     setLoading(true);
     try {
@@ -209,31 +224,27 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       setBranches(branchesData);
       setPersons(personsData);
 
-      // Load women for marriage relationship
-      if (supabase) {
-        const { data: womenData, error } = await supabase
-          .from('النساء')
-          .select('id, الاسم_الأول, اسم_الأب, اسم_العائلة')
-          .order('الاسم_الأول');
-        
-        if (!error && womenData) {
-          setWomen(womenData);
-        }
-      }
-
       // Set image preview if editing
       if (editData?.صورة_شخصية) {
         setImagePreview(editData.صورة_شخصية);
       }
 
-      // If this is a root person, add initial ancestor field
-      if (editData?.is_root) {
-        appendAncestor({ name: '', notes: '' });
-      }
-
-      // If person is married, add initial wife field
-      if (editData?.الحالة_الاجتماعية === 'متزوج') {
-        appendWife({ name: '', father_name: '', family_name: '', birth_date: '', is_deceased: false, death_date: '', notes: '' });
+      // Set visibility of sections based on edit data
+      if (editData) {
+        setShowRootFamilySection(editData.is_root);
+        setShowWivesSection(editData.الحالة_الاجتماعية === 'متزوج');
+        setShowChildrenSection(editData.الحالة_الاجتماعية === 'متزوج');
+        
+        // Load father's wives if father_id is set
+        if (editData.father_id) {
+          loadFatherWives(editData.father_id);
+        }
+        
+        // Load children if editing
+        loadChildrenData(editData.id);
+        
+        // Load wives if editing
+        loadWivesData(editData.id);
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -244,93 +255,115 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
   const loadFatherWives = async (fatherId: number) => {
     try {
-      if (supabase) {
-        // Get all women related to the father through ارتباط_النساء table
-        const { data, error } = await supabase
-          .from('ارتباط_النساء')
-          .select(`
-            woman_id,
-            النساء!inner(id, الاسم_الأول, اسم_الأب, اسم_العائلة)
-          `)
-          .eq('person_id', fatherId)
-          .eq('نوع_الارتباط', 'زوجة');
-        
-        if (!error && data) {
-          const wives = data.map(item => ({
-            id: item.النساء.id,
-            الاسم_الأول: item.النساء.الاسم_الأول,
-            اسم_الأب: item.النساء.اسم_الأب,
-            اسم_العائلة: item.النساء.اسم_العائلة
-          }));
-          setFatherWives(wives);
-        }
+      if (!supabase) return;
+      
+      // Get all women related to this father
+      const { data, error } = await supabase
+        .from('ارتباط_النساء')
+        .select(`
+          woman_id,
+          النساء!inner(
+            id,
+            الاسم_الأول,
+            اسم_الأب,
+            اسم_العائلة,
+            الحالة_الاجتماعية
+          )
+        `)
+        .eq('person_id', fatherId)
+        .eq('نوع_الارتباط', 'زوجة');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const wives = data.map(item => ({
+          id: item.النساء.id,
+          الاسم_الأول: item.النساء.الاسم_الأول,
+          اسم_الأب: item.النساء.اسم_الأب,
+          اسم_العائلة: item.النساء.اسم_العائلة,
+          الحالة_الاجتماعية: item.النساء.الحالة_الاجتماعية
+        }));
+        setFatherWives(wives);
+      } else {
+        setFatherWives([]);
       }
     } catch (error) {
       console.error('Error loading father wives:', error);
+      setFatherWives([]);
     }
   };
 
-  const loadExistingWivesAndChildren = async (personId: number) => {
+  const loadChildrenData = async (personId: number) => {
     try {
-      if (supabase) {
-        // Load wives
-        const { data: wivesData, error: wivesError } = await supabase
-          .from('ارتباط_النساء')
-          .select(`
-            woman_id,
-            النساء!inner(id, الاسم_الأول, اسم_الأب, اسم_العائلة, تاريخ_الميلاد, تاريخ_الوفاة, ملاحظات)
-          `)
-          .eq('person_id', personId)
-          .eq('نوع_الارتباط', 'زوجة');
-        
-        if (!wivesError && wivesData && wivesData.length > 0) {
-          // Clear existing wives
-          while (wivesFields.length > 0) {
-            removeWife(0);
-          }
-          
-          // Add existing wives
-          wivesData.forEach(item => {
-            appendWife({
-              name: item.النساء.الاسم_الأول,
-              father_name: item.النساء.اسم_الأب || '',
-              family_name: item.النساء.اسم_العائلة || '',
-              birth_date: item.النساء.تاريخ_الميلاد || '',
-              is_deceased: !!item.النساء.تاريخ_الوفاة,
-              death_date: item.النساء.تاريخ_الوفاة || '',
-              notes: item.النساء.ملاحظات || ''
-            });
+      if (!supabase || !personId) return;
+      
+      // Get all children of this person
+      const { data, error } = await supabase
+        .from('الأشخاص')
+        .select('*')
+        .eq('father_id', personId);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Add each child to the form
+        data.forEach(child => {
+          appendChild({
+            name: child.الاسم_الأول,
+            gender: child.الجنس || 'ذكر',
+            birth_date: child.تاريخ_الميلاد || '',
+            notes: child.ملاحظات || ''
           });
-        }
-
-        // Load children
-        const { data: childrenData, error: childrenError } = await supabase
-          .from('الأشخاص')
-          .select('*')
-          .eq('father_id', personId);
+        });
         
-        if (!childrenError && childrenData && childrenData.length > 0) {
-          // Clear existing children
-          while (childrenFields.length > 0) {
-            removeChild(0);
-          }
-          
-          // Add existing children
-          childrenData.forEach(child => {
-            appendChild({
-              name: child.الاسم_الأول,
-              gender: child.الجنس || 'ذكر',
-              birth_date: child.تاريخ_الميلاد || '',
-              is_deceased: !!child.تاريخ_الوفاة,
-              death_date: child.تاريخ_الوفاة || '',
-              mother_id: child.mother_id || '',
-              notes: child.ملاحظات || ''
-            });
-          });
-        }
+        setShowChildrenSection(true);
       }
     } catch (error) {
-      console.error('Error loading existing family data:', error);
+      console.error('Error loading children data:', error);
+    }
+  };
+
+  const loadWivesData = async (personId: number) => {
+    try {
+      if (!supabase || !personId) return;
+      
+      // Get all wives of this person
+      const { data, error } = await supabase
+        .from('ارتباط_النساء')
+        .select(`
+          woman_id,
+          تاريخ_الحدث,
+          تفاصيل_إضافية,
+          النساء!inner(
+            id,
+            الاسم_الأول,
+            اسم_الأب,
+            اسم_العائلة,
+            الحالة_الاجتماعية
+          )
+        `)
+        .eq('person_id', personId)
+        .eq('نوع_الارتباط', 'زوجة');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Add each wife to the form
+        data.forEach(item => {
+          appendWife({
+            name: item.النساء.الاسم_الأول,
+            father_name: item.النساء.اسم_الأب || '',
+            family_name: item.النساء.اسم_العائلة || '',
+            marriage_date: item.تاريخ_الحدث || '',
+            status: (item.النساء.الحالة_الاجتماعية as 'متزوجة' | 'مطلقة' | 'أرملة') || 'متزوجة',
+            notes: item.تفاصيل_إضافية || ''
+          });
+        });
+        
+        setShowWivesSection(true);
+      }
+    } catch (error) {
+      console.error('Error loading wives data:', error);
     }
   };
 
@@ -426,20 +459,26 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     setImagePreview(null);
   };
 
-  const addNameField = () => {
-    appendAdditionalName('');
+  const addChild = () => {
+    appendChild({
+      name: '',
+      gender: 'ذكر',
+      birth_date: '',
+      notes: ''
+    });
+    setShowChildrenSection(true);
   };
 
-  const addAncestorField = () => {
-    appendAncestor({ name: '', notes: '' });
-  };
-
-  const addWifeField = () => {
-    appendWife({ name: '', father_name: '', family_name: '', birth_date: '', is_deceased: false, death_date: '', notes: '' });
-  };
-
-  const addChildField = () => {
-    appendChild({ name: '', gender: 'ذكر', birth_date: '', is_deceased: false, death_date: '', mother_id: '', notes: '' });
+  const addWife = () => {
+    appendWife({
+      name: '',
+      father_name: '',
+      family_name: '',
+      marriage_date: '',
+      status: 'متزوجة',
+      notes: ''
+    });
+    setShowWivesSection(true);
   };
 
   const onSubmit = async (data: PersonFormData) => {
@@ -461,95 +500,151 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
     setIsSubmitting(true);
     try {
-      // Combine the main name with additional names
-      const fullName = [data.الاسم_الأول, ...data.additional_names.filter(name => name.trim() !== '')].join(' ');
-
       // Prepare person data
       const personData = {
-        الاسم_الأول: fullName,
+        الاسم_الأول: data.الاسم_الأول,
         is_root: data.is_root,
         تاريخ_الميلاد: data.has_birth_data ? data.تاريخ_الميلاد || undefined : undefined,
         تاريخ_الوفاة: data.is_deceased && data.has_death_data ? data.تاريخ_الوفاة || undefined : undefined,
-        مكان_الميلاد: data.has_birth_data ? (data.مكان_الميلاد === '' ? null : data.مكان_الميلاد) : null,
-        مكان_الوفاة: data.is_deceased && data.has_death_data ? (data.مكان_الوفاة === '' ? null : data.مكان_الوفاة) : null,
+        مكان_الميلاد: data.has_birth_data ? data.مكان_الميلاد || undefined : undefined,
+        مكان_الوفاة: data.is_deceased && data.has_death_data ? data.مكان_الوفاة || undefined : undefined,
         رقم_هوية_وطنية: data.رقم_هوية_وطنية || undefined,
-        الجنس: data.الجنس,
+        الجنس: data.الجنس || 'ذكر',
         الحالة_الاجتماعية: data.الحالة_الاجتماعية || undefined,
         المنصب: data.المنصب || undefined,
         مستوى_التعليم: data.مستوى_التعليم || undefined,
-        father_id: data.father_id === '' ? null : data.father_id,
-        mother_id: data.mother_id === '' ? null : data.mother_id,
-        معرف_الفرع: data.معرف_الفرع === '' ? null : data.معرف_الفرع,
+        father_id: data.is_root ? undefined : data.father_id || undefined,
+        mother_id: data.mother_id || undefined,
+        معرف_الفرع: data.معرف_الفرع || undefined,
         صورة_شخصية: data.صورة_شخصية || undefined,
         ملاحظات: data.ملاحظات || undefined
       };
 
       let personId: number;
 
-      // Update or create person
-      if (editData && editData.id) {
+      if (editData) {
+        // Update existing person
         await arabicFamilyService.updatePerson(editData.id, personData);
         personId = editData.id;
       } else {
+        // Add new person
         const newPerson = await arabicFamilyService.addPerson(personData);
         personId = newPerson.id;
       }
 
-      // Process wives
-      if (data.الحالة_الاجتماعية === 'متزوج' && data.wives.length > 0) {
-        for (const wife of data.wives) {
-          if (!wife.name.trim()) continue;
-
-          // Add wife to النساء table
-          const wifeData = {
-            الاسم_الأول: wife.name,
-            اسم_الأب: wife.father_name || undefined,
-            اسم_العائلة: wife.family_name || undefined,
-            تاريخ_الميلاد: wife.birth_date || undefined,
-            تاريخ_الوفاة: wife.is_deceased ? wife.death_date || undefined : undefined,
-            معرف_الفرع: data.معرف_الفرع === '' ? null : data.معرف_الفرع,
-            ملاحظات: wife.notes || undefined
+      // If this is a root person, create ancestors
+      if (data.is_root && data.root_father_name) {
+        try {
+          // Create father
+          const fatherData = {
+            الاسم_الأول: data.root_father_name,
+            is_root: false,
+            معرف_الفرع: data.معرف_الفرع || undefined,
+            ملاحظات: data.root_father_note || undefined
           };
-
-          let wifeId: number;
-          const { data: newWife, error } = await supabase?.from('النساء').insert([wifeData]).select().single() || {};
+          const father = await arabicFamilyService.addPerson(fatherData);
           
-          if (error) throw error;
-          wifeId = newWife?.id;
-
-          // Create relationship
-          const relationshipData = {
-            woman_id: wifeId,
-            person_id: personId,
-            نوع_الارتباط: 'زوجة',
-            السبب_أو_الحدث: `زواج ${wife.name} من ${fullName}`,
-            تاريخ_الحدث: new Date().toISOString().split('T')[0],
-            أهمية_الحدث: 'متوسطة'
-          };
-
-          await supabase?.from('ارتباط_النساء').insert([relationshipData]);
+          // Update the person with the father_id
+          await arabicFamilyService.updatePerson(personId, { father_id: father.id });
+          
+          // Create grandfather if provided
+          if (data.root_grandfather_name) {
+            const grandfatherData = {
+              الاسم_الأول: data.root_grandfather_name,
+              is_root: false,
+              معرف_الفرع: data.معرف_الفرع || undefined,
+              ملاحظات: data.root_grandfather_note || undefined
+            };
+            const grandfather = await arabicFamilyService.addPerson(grandfatherData);
+            
+            // Update the father with the grandfather_id
+            await arabicFamilyService.updatePerson(father.id, { father_id: grandfather.id });
+            
+            // Create great-grandfather if provided
+            if (data.root_greatgrandfather_name) {
+              const greatGrandfatherData = {
+                الاسم_الأول: data.root_greatgrandfather_name,
+                is_root: false,
+                معرف_الفرع: data.معرف_الفرع || undefined,
+                ملاحظات: data.root_greatgrandfather_note || undefined
+              };
+              const greatGrandfather = await arabicFamilyService.addPerson(greatGrandfatherData);
+              
+              // Update the grandfather with the great-grandfather_id
+              await arabicFamilyService.updatePerson(grandfather.id, { father_id: greatGrandfather.id });
+            }
+          }
+        } catch (error) {
+          console.error('Error creating ancestors:', error);
         }
       }
 
-      // Process children
-      if (data.children.length > 0) {
+      // Process children if any
+      if (data.children && data.children.length > 0) {
         for (const child of data.children) {
-          if (!child.name.trim()) continue;
-
-          // Add child to الأشخاص table
-          const childData = {
-            الاسم_الأول: child.name,
-            father_id: personId,
-            mother_id: child.mother_id || null,
-            تاريخ_الميلاد: child.birth_date || undefined,
-            تاريخ_الوفاة: child.is_deceased ? child.death_date || undefined : undefined,
-            الجنس: child.gender,
-            معرف_الفرع: data.معرف_الفرع === '' ? null : data.معرف_الفرع, // Inherit father's branch
-            ملاحظات: child.notes || undefined
-          };
-
-          await arabicFamilyService.addPerson(childData);
+          if (child.name.trim()) {
+            const childData = {
+              الاسم_الأول: child.name,
+              father_id: personId,
+              الجنس: child.gender,
+              تاريخ_الميلاد: child.birth_date || undefined,
+              معرف_الفرع: data.معرف_الفرع || undefined, // Inherit branch from father
+              ملاحظات: child.notes || undefined
+            };
+            
+            await arabicFamilyService.addPerson(childData);
+          }
         }
+      }
+
+      // Process wives if any
+      if (data.wives && data.wives.length > 0) {
+        for (const wife of data.wives) {
+          if (wife.name.trim()) {
+            // First, add the woman to the النساء table
+            if (!supabase) {
+              throw new Error('Supabase client not initialized');
+            }
+            
+            const womanData = {
+              الاسم_الأول: wife.name,
+              اسم_الأب: wife.father_name || undefined,
+              اسم_العائلة: wife.family_name || undefined,
+              الحالة_الاجتماعية: wife.status,
+              معرف_الفرع: data.معرف_الفرع || undefined // Inherit branch from husband
+            };
+            
+            const { data: newWoman, error: womanError } = await supabase
+              .from('النساء')
+              .insert([womanData])
+              .select()
+              .single();
+            
+            if (womanError) throw womanError;
+            
+            // Then create the relationship
+            const relationshipData = {
+              woman_id: newWoman.id,
+              person_id: personId,
+              نوع_الارتباط: 'زوجة',
+              السبب_أو_الحدث: `زواج ${wife.name} من ${data.الاسم_الأول}`,
+              تاريخ_الحدث: wife.marriage_date || undefined,
+              تفاصيل_إضافية: wife.notes || undefined,
+              أهمية_الحدث: 'متوسطة'
+            };
+            
+            const { error: relationshipError } = await supabase
+              .from('ارتباط_النساء')
+              .insert([relationshipData]);
+            
+            if (relationshipError) throw relationshipError;
+          }
+        }
+      }
+
+      // Update marital status if needed
+      if (data.wives && data.wives.length > 0 && data.الحالة_الاجتماعية !== 'متزوج') {
+        await arabicFamilyService.updatePerson(personId, { الحالة_الاجتماعية: 'متزوج' });
       }
 
       onSuccess();
@@ -565,7 +660,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">جاري تحميل البيانات...</p>
         </div>
       </div>
@@ -573,7 +668,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
@@ -583,8 +678,8 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 <User className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  {editData?.id ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {editData ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
                 </h1>
                 <p className="text-gray-600">إدخال المعلومات الشخصية والعائلية</p>
               </div>
@@ -604,74 +699,13 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Form Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-emerald-500 p-6">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6">
               <h2 className="text-2xl font-bold text-white">المعلومات الأساسية</h2>
               <p className="text-blue-100 mt-2">املأ جميع الحقول المطلوبة بدقة</p>
             </div>
 
             <div className="p-8 space-y-8">
-              {/* Basic Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                  الاسم
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* First Name */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <User className="w-4 h-4" />
-                      الاسم الأول *
-                    </label>
-                    <input
-                      {...register('الاسم_الأول', { required: 'الاسم الأول مطلوب' })}
-                      type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="أدخل الاسم الأول"
-                    />
-                    {errors.الاسم_الأول && (
-                      <p className="text-red-500 text-sm">{errors.الاسم_الأول.message}</p>
-                    )}
-                  </div>
-
-                  {/* Additional Names */}
-                  {additionalNamesFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-2">
-                      <div className="flex-1 space-y-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <User className="w-4 h-4" />
-                          الاسم الإضافي {index + 1}
-                        </label>
-                        <input
-                          {...register(`additional_names.${index}` as const)}
-                          type="text"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder={`أدخل الاسم الإضافي ${index + 1}`}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeAdditionalName(index)}
-                        className="mt-8 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Minus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Add Name Button */}
-                  <button
-                    type="button"
-                    onClick={addNameField}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    إضافة اسم آخر
-                  </button>
-                </div>
-              </div>
-
-              {/* Root Person Checkbox */}
+              {/* Root Family Checkbox */}
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -679,87 +713,32 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                     type="checkbox"
                     className="w-5 h-5 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
                   />
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-600" />
                     <span className="font-medium text-amber-800">هذا الشخص هو جذر العائلة</span>
-                    <p className="text-sm text-amber-600">حدد هذا الخيار إذا كان هذا الشخص هو المؤسس الأول للعائلة</p>
                   </div>
                 </label>
+                <p className="text-sm text-amber-700 mt-2 mr-8">
+                  حدد هذا الخيار إذا كان هذا الشخص هو بداية شجرة العائلة أو جذر فرع جديد
+                </p>
               </div>
 
-              {/* Ancestors Section (visible only for root person) */}
-              {watchIsRoot && (
-                <div className="space-y-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-amber-800 border-b border-amber-200 pb-2 flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    الأجداد والنسب
-                  </h3>
-                  <p className="text-amber-700 text-sm mb-4">
-                    أدخل معلومات الأجداد والنسب لهذا الشخص الجذر
-                  </p>
-
-                  {ancestorsFields.map((field, index) => (
-                    <div key={field.id} className="bg-white rounded-xl border border-amber-200 p-4 mb-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h4 className="font-medium text-amber-800">
-                          {index === 0 ? 'الأب' : index === 1 ? 'الجد' : index === 2 ? 'الجد الأكبر' : `الجيل ${index + 1}`}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => removeAncestor(index)}
-                          className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">الاسم الكامل</label>
-                          <input
-                            {...register(`ancestors.${index}.name` as const)}
-                            type="text"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
-                            placeholder="أدخل الاسم الكامل"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">ملاحظات</label>
-                          <textarea
-                            {...register(`ancestors.${index}.notes` as const)}
-                            rows={2}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
-                            placeholder="أي معلومات إضافية عن هذا الشخص"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={addAncestorField}
-                    className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    إضافة جد آخر
-                  </button>
-                </div>
-              )}
-
+              {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <User className="w-4 h-4" />
-                    الجنس *
+                    الاسم الأول *
                   </label>
-                  <select
-                    {...register('الجنس', { required: 'الجنس مطلوب' })}
+                  <input
+                    {...register('الاسم_الأول', { required: 'الاسم الأول مطلوب' })}
+                    type="text"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  >
-                    <option value="ذكر">ذكر</option>
-                    <option value="أنثى">أنثى</option>
-                  </select>
+                    placeholder="أدخل الاسم الأول"
+                  />
+                  {errors.الاسم_الأول && (
+                    <p className="text-red-500 text-sm">{errors.الاسم_الأول.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -801,6 +780,20 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <User className="w-4 h-4" />
+                    الجنس
+                  </label>
+                  <select
+                    {...register('الجنس')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Heart className="w-4 h-4" />
                     الحالة الاجتماعية
                   </label>
                   <select
@@ -816,53 +809,170 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 </div>
               </div>
 
-              {/* Family Relations */}
-              {!watchIsRoot && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                    العلاقات العائلية
-                  </h3>
+              {/* Family Relationship */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  العلاقات العائلية
+                </h3>
+                
+                {!watchIsRoot && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <User className="w-4 h-4" />
-                        الوالد
+                        الأب
                       </label>
                       <select
                         {...register('father_id')}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       >
-                        <option value="">اختر الوالد</option>
-                        {persons.filter(p => p.الجنس === 'ذكر').map((person) => (
-                          <option key={person.id} value={person.id}>
-                            {person.الاسم_الكامل || person.الاسم_الأول}
-                          </option>
-                        ))}
+                        <option value="">اختر الأب</option>
+                        {persons
+                          .filter(person => person.الجنس === 'ذكر')
+                          .map((person) => (
+                            <option key={person.id} value={person.id}>
+                              {person.الاسم_الكامل || person.الاسم_الأول}
+                            </option>
+                          ))}
                       </select>
                     </div>
 
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <User className="w-4 h-4" />
-                        الوالدة
+                        الأم
                       </label>
                       <select
                         {...register('mother_id')}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        disabled={!watchFatherId || fatherWives.length === 0}
                       >
-                        <option value="">اختر الوالدة</option>
-                        {fatherWives.map((woman) => (
-                          <option key={woman.id} value={woman.id}>
-                            {woman.الاسم_الأول} {woman.اسم_الأب || ''} {woman.اسم_العائلة || ''}
-                          </option>
-                        ))}
+                        <option value="">اختر الأم</option>
+                        {fatherWives.length > 0 ? (
+                          // Show only the father's wives
+                          fatherWives.map((woman) => (
+                            <option key={woman.id} value={woman.id}>
+                              {woman.الاسم_الأول} {woman.اسم_الأب || ''} {woman.اسم_العائلة || ''}
+                            </option>
+                          ))
+                        ) : (
+                          // If no father selected or no wives found, show all women
+                          persons
+                            .filter(person => person.الجنس === 'أنثى')
+                            .map((person) => (
+                              <option key={person.id} value={person.id}>
+                                {person.الاسم_الكامل || person.الاسم_الأول}
+                              </option>
+                            ))
+                        )}
                       </select>
-                      {watchFatherId && fatherWives.length === 0 && (
-                        <p className="text-amber-600 text-xs">
-                          لم يتم العثور على زوجات للوالد المحدد
-                        </p>
-                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Building className="w-4 h-4" />
+                    الفرع العائلي
+                  </label>
+                  <select
+                    {...register('معرف_الفرع')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">اختر الفرع العائلي</option>
+                    {branches.map((branch) => (
+                      <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
+                        {branch.اسم_الفرع}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Root Family Information - Conditional */}
+              {showRootFamilySection && (
+                <div className="space-y-6 bg-amber-50 border border-amber-200 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-amber-800 border-b border-amber-200 pb-2 flex items-center gap-2">
+                    <Crown className="w-5 h-5" />
+                    معلومات جذر العائلة
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          اسم الأب
+                        </label>
+                        <input
+                          {...register('root_father_name')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أدخل اسم الأب"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          ملاحظات عن الأب
+                        </label>
+                        <input
+                          {...register('root_father_note')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أي معلومات إضافية عن الأب"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          اسم الجد
+                        </label>
+                        <input
+                          {...register('root_grandfather_name')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أدخل اسم الجد"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          ملاحظات عن الجد
+                        </label>
+                        <input
+                          {...register('root_grandfather_note')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أي معلومات إضافية عن الجد"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          اسم الجد الأكبر
+                        </label>
+                        <input
+                          {...register('root_greatgrandfather_name')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أدخل اسم الجد الأكبر"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-amber-700">
+                          ملاحظات عن الجد الأكبر
+                        </label>
+                        <input
+                          {...register('root_greatgrandfather_note')}
+                          type="text"
+                          className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors bg-white"
+                          placeholder="أي معلومات إضافية عن الجد الأكبر"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -871,19 +981,19 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
               {/* Birth Information */}
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                  معلومات الولادة
+                  معلومات الميلاد
                 </h3>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       {...register('has_birth_data')}
                       type="checkbox"
-                      className="w-5 h-5 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <div className="flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-800">هل تتوفر بيانات الولادة؟</span>
+                      <span className="font-medium text-gray-800">هل تتوفر معلومات الميلاد؟</span>
                     </div>
                   </label>
                 </div>
@@ -944,7 +1054,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                         </>
                       ) : (
                         <>
-                          <Heart className="w-5 h-5 text-emerald-600 fill-current" />
+                          <Heart className="w-5 h-5 text-blue-600 fill-current" />
                           <span className="font-medium text-gray-800">الشخص على قيد الحياة</span>
                         </>
                       )}
@@ -962,7 +1072,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                       />
                       <div className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-gray-600" />
-                        <span className="font-medium text-gray-800">هل تتوفر بيانات الوفاة؟</span>
+                        <span className="font-medium text-gray-800">هل تتوفر معلومات الوفاة؟</span>
                       </div>
                     </label>
                   </div>
@@ -976,10 +1086,15 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                         تاريخ الوفاة
                       </label>
                       <input
-                        {...register('تاريخ_الوفاة')}
+                        {...register('تاريخ_الوفاة', {
+                          required: watchIsDeceased && watchHasDeathData ? 'تاريخ الوفاة مطلوب للمتوفين' : false
+                        })}
                         type="date"
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       />
+                      {errors.تاريخ_الوفاة && (
+                        <p className="text-red-500 text-sm">{errors.تاريخ_الوفاة.message}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -1037,43 +1152,238 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 </div>
               </div>
 
-              {/* Branch and Additional Info */}
+              {/* Marriage Information - Conditional */}
+              {(watchMaritalStatus === 'متزوج' || watchIsMarried) && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-pink-600" />
+                      الزوجات
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowWivesSection(!showWivesSection)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      {showWivesSection ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {showWivesSection ? 'إخفاء' : 'عرض'}
+                    </button>
+                  </div>
+                  
+                  {showWivesSection && (
+                    <div className="space-y-4">
+                      {wivesFields.map((field, index) => (
+                        <div key={field.id} className="bg-pink-50 border border-pink-200 rounded-xl p-4 space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium text-pink-800 flex items-center gap-2">
+                              <Heart className="w-4 h-4" />
+                              الزوجة {index + 1}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => removeWife(index)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                اسم الزوجة *
+                              </label>
+                              <input
+                                {...register(`wives.${index}.name` as const, { required: true })}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                                placeholder="أدخل اسم الزوجة"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                اسم الأب
+                              </label>
+                              <input
+                                {...register(`wives.${index}.father_name` as const)}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                                placeholder="أدخل اسم أب الزوجة"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                اسم العائلة
+                              </label>
+                              <input
+                                {...register(`wives.${index}.family_name` as const)}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                                placeholder="أدخل اسم عائلة الزوجة"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                تاريخ الزواج
+                              </label>
+                              <input
+                                {...register(`wives.${index}.marriage_date` as const)}
+                                type="date"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                حالة الزواج
+                              </label>
+                              <select
+                                {...register(`wives.${index}.status` as const)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                              >
+                                <option value="متزوجة">متزوجة</option>
+                                <option value="مطلقة">مطلقة</option>
+                                <option value="أرملة">أرملة</option>
+                              </select>
+                            </div>
+                            
+                            <div className="space-y-2 md:col-span-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                ملاحظات
+                              </label>
+                              <input
+                                {...register(`wives.${index}.notes` as const)}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                                placeholder="أي ملاحظات إضافية عن الزوجة"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={addWife}
+                        className="w-full py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <UserPlus className="w-5 h-5" />
+                        إضافة زوجة جديدة
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Children Information - Conditional */}
+              {(watchMaritalStatus === 'متزوج' || watchIsMarried) && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      الأبناء
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowChildrenSection(!showChildrenSection)}
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      {showChildrenSection ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {showChildrenSection ? 'إخفاء' : 'عرض'}
+                    </button>
+                  </div>
+                  
+                  {showChildrenSection && (
+                    <div className="space-y-4">
+                      {childrenFields.map((field, index) => (
+                        <div key={field.id} className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium text-blue-800 flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              الابن/الابنة {index + 1}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => removeChild(index)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                اسم الابن/الابنة *
+                              </label>
+                              <input
+                                {...register(`children.${index}.name` as const, { required: true })}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                placeholder="أدخل اسم الابن/الابنة"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                الجنس
+                              </label>
+                              <select
+                                {...register(`children.${index}.gender` as const)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              >
+                                <option value="ذكر">ذكر</option>
+                                <option value="أنثى">أنثى</option>
+                              </select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                تاريخ الميلاد
+                              </label>
+                              <input
+                                {...register(`children.${index}.birth_date` as const)}
+                                type="date"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                ملاحظات
+                              </label>
+                              <input
+                                {...register(`children.${index}.notes` as const)}
+                                type="text"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                placeholder="أي ملاحظات إضافية"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={addChild}
+                        className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <UserPlus className="w-5 h-5" />
+                        إضافة ابن/ابنة جديد
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Additional Information */}
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                   معلومات إضافية
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Building className="w-4 h-4" />
-                      الفرع العائلي
-                    </label>
-                    <select
-                      {...register('معرف_الفرع')}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="">اختر الفرع العائلي</option>
-                      {branches.map((branch) => (
-                        <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
-                          {branch.اسم_الفرع}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Phone className="w-4 h-4" />
-                      رقم الهاتف
-                    </label>
-                    <input
-                      type="tel"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="أدخل رقم الهاتف"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
 
                 {/* Image Upload */}
                 <div className="space-y-4">
@@ -1154,312 +1464,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                   />
                 </div>
               </div>
-
-              {/* Wives Section - Only visible if married */}
-              {watchMaritalStatus === 'متزوج' && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-pink-600" />
-                    الزوجات
-                  </h3>
-
-                  {wivesFields.length === 0 ? (
-                    <div className="bg-pink-50 border border-pink-200 rounded-xl p-6 text-center">
-                      <Heart className="w-10 h-10 text-pink-400 mx-auto mb-3" />
-                      <p className="text-pink-700 mb-4">لم تتم إضافة أي زوجات بعد</p>
-                      <button
-                        type="button"
-                        onClick={addWifeField}
-                        className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors inline-flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        إضافة زوجة
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {wivesFields.map((field, index) => (
-                        <div key={field.id} className="bg-pink-50 border border-pink-200 rounded-xl p-5">
-                          <div className="flex justify-between items-start mb-4">
-                            <h4 className="font-medium text-pink-800 flex items-center gap-2">
-                              <Heart className="w-4 h-4" />
-                              {`الزوجة ${index + 1}`}
-                            </h4>
-                            <button
-                              type="button"
-                              onClick={() => removeWife(index)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Wife's Name */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">الاسم الأول *</label>
-                              <input
-                                {...register(`wives.${index}.name` as const, { required: true })}
-                                type="text"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                                placeholder="أدخل اسم الزوجة"
-                              />
-                            </div>
-
-                            {/* Father's Name */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">اسم الأب</label>
-                              <input
-                                {...register(`wives.${index}.father_name` as const)}
-                                type="text"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                                placeholder="أدخل اسم أب الزوجة"
-                              />
-                            </div>
-
-                            {/* Family Name */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">اسم العائلة</label>
-                              <input
-                                {...register(`wives.${index}.family_name` as const)}
-                                type="text"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                                placeholder="أدخل اسم عائلة الزوجة"
-                              />
-                            </div>
-
-                            {/* Birth Date */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">تاريخ الميلاد</label>
-                              <input
-                                {...register(`wives.${index}.birth_date` as const)}
-                                type="date"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                              />
-                            </div>
-
-                            {/* Is Deceased */}
-                            <div className="space-y-2 md:col-span-2">
-                              <div className="flex items-center gap-2">
-                                <Controller
-                                  control={control}
-                                  name={`wives.${index}.is_deceased` as const}
-                                  render={({ field }) => (
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={field.onChange}
-                                        className="w-4 h-4 text-pink-600 border-pink-300 rounded focus:ring-pink-500"
-                                      />
-                                      <span className="text-sm font-medium text-gray-700">متوفاة</span>
-                                    </label>
-                                  )}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Death Date - Only shown if deceased */}
-                            {watch(`wives.${index}.is_deceased`) && (
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">تاريخ الوفاة</label>
-                                <input
-                                  {...register(`wives.${index}.death_date` as const)}
-                                  type="date"
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                                />
-                              </div>
-                            )}
-
-                            {/* Notes */}
-                            <div className="space-y-2 md:col-span-2">
-                              <label className="text-sm font-medium text-gray-700">ملاحظات</label>
-                              <textarea
-                                {...register(`wives.${index}.notes` as const)}
-                                rows={2}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors resize-none"
-                                placeholder="أي معلومات إضافية عن الزوجة"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={addWifeField}
-                        className="flex items-center gap-2 px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        إضافة زوجة أخرى
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Children Section - Only visible if married */}
-              {watchMaritalStatus === 'متزوج' && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-600" />
-                    الأبناء
-                  </h3>
-
-                  {childrenFields.length === 0 ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-                      <Users className="w-10 h-10 text-blue-400 mx-auto mb-3" />
-                      <p className="text-blue-700 mb-4">لم تتم إضافة أي أبناء بعد</p>
-                      <button
-                        type="button"
-                        onClick={addChildField}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        إضافة ابن
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {childrenFields.map((field, index) => (
-                        <div key={field.id} className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-                          <div className="flex justify-between items-start mb-4">
-                            <h4 className="font-medium text-blue-800 flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              {`الابن ${index + 1}`}
-                            </h4>
-                            <button
-                              type="button"
-                              onClick={() => removeChild(index)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Child's Name */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">الاسم *</label>
-                              <input
-                                {...register(`children.${index}.name` as const, { required: true })}
-                                type="text"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                placeholder="أدخل اسم الابن"
-                              />
-                            </div>
-
-                            {/* Gender */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">الجنس</label>
-                              <select
-                                {...register(`children.${index}.gender` as const)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                              >
-                                <option value="ذكر">ذكر</option>
-                                <option value="أنثى">أنثى</option>
-                              </select>
-                            </div>
-
-                            {/* Mother */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">الأم</label>
-                              <select
-                                {...register(`children.${index}.mother_id` as const)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                              >
-                                <option value="">اختر الأم</option>
-                                {wivesFields.map((wife, wifeIndex) => {
-                                  const wifeName = watch(`wives.${wifeIndex}.name`);
-                                  if (!wifeName) return null;
-                                  return (
-                                    <option key={wife.id} value={`wife_${wifeIndex}`}>
-                                      {wifeName}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            </div>
-
-                            {/* Birth Date */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">تاريخ الميلاد</label>
-                              <input
-                                {...register(`children.${index}.birth_date` as const)}
-                                type="date"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                              />
-                            </div>
-
-                            {/* Is Deceased */}
-                            <div className="space-y-2 md:col-span-2">
-                              <div className="flex items-center gap-2">
-                                <Controller
-                                  control={control}
-                                  name={`children.${index}.is_deceased` as const}
-                                  render={({ field }) => (
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={field.value}
-                                        onChange={field.onChange}
-                                        className="w-4 h-4 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
-                                      />
-                                      <span className="text-sm font-medium text-gray-700">متوفى</span>
-                                    </label>
-                                  )}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Death Date - Only shown if deceased */}
-                            {watch(`children.${index}.is_deceased`) && (
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">تاريخ الوفاة</label>
-                                <input
-                                  {...register(`children.${index}.death_date` as const)}
-                                  type="date"
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                />
-                              </div>
-                            )}
-
-                            {/* Notes */}
-                            <div className="space-y-2 md:col-span-2">
-                              <label className="text-sm font-medium text-gray-700">ملاحظات</label>
-                              <textarea
-                                {...register(`children.${index}.notes` as const)}
-                                rows={2}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                                placeholder="أي معلومات إضافية عن الابن"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Inheritance Info */}
-                          <div className="mt-4 bg-blue-100 p-3 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <Info className="w-4 h-4 text-blue-700" />
-                              <p className="text-sm text-blue-800">
-                                سيرث هذا الابن معلومات الفرع العائلي من الأب تلقائياً
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={addChildField}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        إضافة ابن آخر
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Form Actions */}
@@ -1474,7 +1478,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
               <button
                 type="submit"
                 disabled={isSubmitting || nationalIdError !== '' || isCheckingNationalId}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-xl hover:from-blue-600 hover:to-emerald-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -1484,7 +1488,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {editData?.id ? 'تحديث البيانات' : 'حفظ البيانات'}
+                    {editData ? 'تحديث البيانات' : 'حفظ البيانات'}
                   </>
                 )}
               </button>
