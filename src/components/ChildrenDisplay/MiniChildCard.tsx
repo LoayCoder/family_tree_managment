@@ -18,6 +18,8 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
       ? `${child.displayData.currentAge || 'غير محدد'} سنة`
       : `${child.displayData.birthYear} - متوفى`;
 
+  const firstName = child.displayData.name.split(' ')[0];
+
   return (
     <div
       className={`bg-white border rounded-lg p-3 cursor-pointer flex items-start gap-3 transition shadow-sm hover:shadow-md ${
@@ -44,15 +46,15 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
 
       {/* Info */}
       <div className="flex-1 min-w-0 text-right">
-        {/* Name always on first line, no truncation */}
+        {/* Show only the first name */}
         <h4
           className="text-sm font-bold text-slate-800 leading-snug break-words"
           style={{ direction: 'rtl', wordBreak: 'break-word' }}
         >
-          {child.displayData.name}
+          {firstName}
         </h4>
 
-        {/* Secondary info */}
+        {/* Age & Marital Info */}
         <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">
           <div>{ageDisplay}</div>
 
