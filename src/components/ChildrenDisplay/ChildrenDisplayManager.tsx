@@ -27,12 +27,12 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
   const [displayMode, setDisplayMode] = useState<'mini' | 'detailed'>('mini');
   const [error, setError] = useState<string | null>(null);
 
-  // Load children count on mount
+  // Load children count initially if not provided
   useEffect(() => {
     if (initialChildrenCount === 0) {
       loadChildrenCount();
     }
-  }, [personId, initialChildrenCount]);
+  }, [personId]);
 
   const loadChildrenCount = async () => {
     try {
@@ -44,70 +44,57 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
     }
   };
 
-  const loadChildren = async () => {
-    if (children.length > 0) return; // Already loaded
-
-    setDisplayState(prev => ({ ...prev, childrenLoadState: 'loading' }));
-    setError(null);
-    
-    try {
-      const childrenData = await childrenService.getPersonChildrenWithStats(personId);
-      setChildren(childrenData);
-      setChildrenCount(childrenData.length);
-      setDisplayState(prev => ({ 
-        ...prev, 
-        childrenLoadState: 'loaded',
-        showingChildren: true 
-      }));
-    } catch (error) {
-      console.error('Error loading children:', error);
-      setError('فشل في تحميل بيانات الأبناء');
-      setDisplayState(prev => ({ ...prev, childrenLoadState: 'error' }));
-    }
-  };
-
   const handleExpandChildren = async () => {
-    if (!displayState.isExpanded) {
-      setDisplayState(prev => ({ ...prev, isExpanded: true }));
-      await loadChildren();
-    } else {
-      setDisplayState(prev => ({ 
-        ...prev, 
-        isExpanded: false, 
-        showingChildren: false 
-      }));
+    const willExpand = !displayState.isExpanded;
+
+    setDisplayState(prev => ({
+      ...prev,
+      isExpanded: willExpand,
+      showingChildren: willExpand && children.length > 0,
+      childrenLoadState:
+        willExpand && children.length === 0 ? 'loading' : prev.childrenLoadState
+    }));
+
+    if (willExpand && children.length === 0) {
+      try {
+        const childrenData = await childrenService.getPersonChildrenWithStats(personId);
+        setChildren(childrenData);
+        setChildrenCount(childrenData.length);
+        setDisplayState(prev => ({
+          ...prev,
+          childrenLoadState: 'loaded',
+          showingChildren: true
+        }));
+      } catch (err) {
+        console.error('Error loading children:', err);
+        setDisplayState(prev => ({
+          ...prev,
+          childrenLoadState: 'error',
+          showingChildren: false
+        }));
+        setError('فشل في تحميل بيانات الأبناء');
+      }
     }
   };
 
   const handleShowAllChildren = () => {
-    // This could open a modal or navigate to a dedicated children page
-    console.log('Show all children for:', personName);
-    // For now, just expand the preview
     setDisplayState(prev => ({ ...prev, maxPreview: children.length }));
   };
 
   const handleChildSelect = (child: ChildCard) => {
     console.log('Selected child:', child.displayData.name);
-    // This could navigate to the child's detail page or open a modal
-    // For now, just log the selection
-    
-    // In a real implementation, you might do:
-    // navigate(`/person/${child.id}`);
-    // or
-    // openModal(child);
+    // Navigate to child detail or open modal
   };
 
   const handleDisplayModeChange = (mode: 'mini' | 'detailed') => {
     setDisplayMode(mode);
   };
 
-  if (childrenCount === 0) {
-    return null; // Don't show anything if no children
-  }
+  if (childrenCount === 0) return null;
 
   return (
     <div className="children-display-manager mt-3">
-      {/* Children Counter */}
+      {/* Toggle button */}
       <ChildrenCounter
         count={childrenCount}
         onExpand={handleExpandChildren}
@@ -115,7 +102,7 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
         isExpanded={displayState.isExpanded}
       />
 
-      {/* Children Preview */}
+      {/* Child Cards */}
       {displayState.isExpanded && displayState.showingChildren && (
         <ChildrenPreview
           children={children}
@@ -127,12 +114,12 @@ export const ChildrenDisplayManager: React.FC<ChildrenDisplayManagerProps> = ({
         />
       )}
 
-      {/* Error State */}
+      {/* Error display */}
       {error && (
         <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
           <p className="text-red-600 text-sm">{error}</p>
-          <button 
-            onClick={loadChildren} 
+          <button
+            onClick={handleExpandChildren}
             className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
           >
             إعادة المحاولة
