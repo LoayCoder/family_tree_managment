@@ -33,21 +33,25 @@ export const ChildrenPreview: React.FC<ChildrenPreviewProps> = ({
 
   return (
     <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      {/* Count Display */}
       <div className="text-xs text-slate-600 mb-3">
         عرض {visibleChildren.length} من {children.length} طفل
       </div>
 
-      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+      {/* Full-Width Vertical Stack */}
+      <div className="flex flex-col gap-3">
         {visibleChildren.map((child) => (
-          <MiniChildCard
-            key={child.id}
-            child={child}
-            onClick={() => onChildSelect(child)}
-            displayMode={displayMode}
-          />
+          <div className="w-full" key={child.id}>
+            <MiniChildCard
+              child={child}
+              onClick={() => onChildSelect(child)}
+              displayMode={displayMode}
+            />
+          </div>
         ))}
       </div>
 
+      {/* Show More */}
       {hasMore && (
         <div className="mt-4 text-center">
           <button
