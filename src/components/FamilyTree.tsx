@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TreePine, Users, Search, Filter } from 'lucide-react';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
-import { familyService } from '../services/supabase';
+import { familyService, DeletionConstraintError } from '../services/supabase';
 import MemberCard from './MemberCard';
 import ResponsiveContainer from './responsive/ResponsiveContainer';
 import ResponsiveFlex from './responsive/ResponsiveFlex';
@@ -39,27 +39,32 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     alert(`تعديل العضو: ${memberId}`);
   };
 
+  const showMessage = (message: string, type: 'success' | 'error' | 'warning') => {
+    const messageDiv = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-yellow-500';
+    messageDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md`;
+    messageDiv.style.direction = 'rtl';
+    messageDiv.textContent = message;
+    document.body.appendChild(messageDiv);
+    setTimeout(() => messageDiv.remove(), 5000);
+  };
+
   const handleDelete = async (memberId: string) => {
     if (confirm('هل أنت متأكد من حذف هذا العضو؟')) {
       try {
         await familyService.deleteMember(memberId);
         loadFamilyTree();
-        
-        // Show success message
-        const successDiv = document.createElement('div');
-        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successDiv.textContent = 'تم حذف العضو بنجاح!';
-        document.body.appendChild(successDiv);
-        setTimeout(() => successDiv.remove(), 3000);
+        showMessage('تم حذف العضو بنجاح!', 'success');
       } catch (error) {
         console.error('Error deleting member:', error);
         
-        // Show error message
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        errorDiv.textContent = 'حدث خطأ أثناء حذف العضو';
-        document.body.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 3000);
+        if (error instanceof DeletionConstraintError) {
+          // Show specific constraint error message
+          showMessage(error.message, 'warning');
+        } else {
+          // Show generic error message
+          showMessage('حدث خطأ أثناء حذف العضو. يرجى المحاولة مرة أخرى.', 'error');
+        }
       }
     }
   };

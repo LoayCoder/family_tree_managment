@@ -22,6 +22,14 @@ export interface FamilyMemberWithLevel extends FamilyMember {
   children_count?: number;
 }
 
+// Custom error class for deletion constraints
+export class DeletionConstraintError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DeletionConstraintError';
+  }
+}
+
 // Adapter functions to maintain compatibility with existing components
 export const legacyFamilyService = {
   async addMember(memberData: Omit<FamilyMember, 'id' | 'created_at' | 'updated_at'>) {
@@ -148,10 +156,48 @@ export const legacyFamilyService = {
       throw new Error('Supabase client not initialized');
     }
 
+    const memberId = parseInt(id);
+
+    // First, check if this member has any children
+    const { data: children, error: childrenError } = await supabase
+      .from('الأشخاص')
+      .select('id, الاسم_الأول')
+      .eq('father_id', memberId);
+
+    if (childrenError) {
+      throw childrenError;
+    }
+
+    // If children exist, prevent deletion
+    if (children && children.length > 0) {
+      const childrenNames = children.map(child => child.الاسم_الأول).join('، ');
+      throw new DeletionConstraintError(
+        `لا يمكن حذف هذا العضو لأنه والد لأعضاء آخرين في العائلة: ${childrenNames}. يجب حذف الأطفال أولاً أو تغيير والدهم قبل حذف هذا العضو.`
+      );
+    }
+
+    // Also check if this member is referenced as a mother
+    const { data: childrenAsMother, error: motherError } = await supabase
+      .from('الأشخاص')
+      .select('id, الاسم_الأول')
+      .eq('mother_id', memberId);
+
+    if (motherError) {
+      throw motherError;
+    }
+
+    if (childrenAsMother && childrenAsMother.length > 0) {
+      const childrenNames = childrenAsMother.map(child => child.الاسم_الأول).join('، ');
+      throw new DeletionConstraintError(
+        `لا يمكن حذف هذا العضو لأنه والدة لأعضاء آخرين في العائلة: ${childrenNames}. يجب حذف الأطفال أولاً أو تغيير والدتهم قبل حذف هذا العضو.`
+      );
+    }
+
+    // If no children, proceed with deletion
     const { error } = await supabase
       .from('الأشخاص')
       .delete()
-      .eq('id', parseInt(id));
+      .eq('id', memberId);
 
     if (error) throw error;
   }
