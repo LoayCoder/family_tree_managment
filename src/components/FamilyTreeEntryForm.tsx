@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { 
   User, Users, TreePine, Heart, Plus, Minus, Trash2, Save, 
-  X, ChevronDown, ChevronUp, Crown, UserPlus, UserMinus 
+  X, ChevronDown, ChevronUp, Crown, UserPlus, UserMinus,
+  Calendar, MapPin, Phone, FileText, Building, Hash, AlertCircle, Image
 } from 'lucide-react';
 import { supabase } from '../services/arabicFamilyService';
 
@@ -14,11 +15,21 @@ interface AncestorField {
 interface WifeField {
   name: string;
   id: string;
+  birthDate?: string;
+  birthPlace?: string;
+  nationalId?: string;
+  notes?: string;
 }
 
 interface ChildField {
   name: string;
   mother_id: string;
+  birthDate?: string;
+  birthPlace?: string;
+  gender?: 'ذكر' | 'أنثى';
+  nationalId?: string;
+  notes?: string;
+  additionalNames: string[];
 }
 
 interface FamilyTreeFormData {
@@ -28,8 +39,16 @@ interface FamilyTreeFormData {
   wives: WifeField[];
   children: ChildField[];
   birthDate?: string;
+  birthPlace?: string;
   deathDate?: string;
+  nationalId?: string;
+  gender?: 'ذكر' | 'أنثى';
+  maritalStatus?: string;
+  position?: string;
+  education?: string;
+  branchId?: string;
   notes?: string;
+  additionalNames: string[];
 }
 
 export default function FamilyTreeEntryForm() {
@@ -40,6 +59,8 @@ export default function FamilyTreeEntryForm() {
   const [childrenSection, setChildrenSection] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [locations, setLocations] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FamilyTreeFormData>({
     defaultValues: {
@@ -49,8 +70,16 @@ export default function FamilyTreeEntryForm() {
       wives: [{ name: '', id: Date.now().toString() }],
       children: [],
       birthDate: '',
+      birthPlace: '',
       deathDate: '',
-      notes: ''
+      nationalId: '',
+      gender: 'ذكر',
+      maritalStatus: '',
+      position: '',
+      education: '',
+      branchId: '',
+      notes: '',
+      additionalNames: []
     }
   });
 
@@ -69,8 +98,47 @@ export default function FamilyTreeEntryForm() {
     name: 'children'
   });
 
+  const { fields: additionalNameFields, append: appendAdditionalName, remove: removeAdditionalName } = useFieldArray({
+    control,
+    name: 'additionalNames'
+  });
+
   const watchIsRoot = watch('isRoot');
   const watchWives = watch('wives');
+  const watchAdditionalNames = watch('additionalNames');
+
+  // Load locations and branches on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        if (supabase) {
+          // Load locations
+          const { data: locationsData, error: locationsError } = await supabase
+            .from('المواقع')
+            .select('*')
+            .order('الدولة', { ascending: true });
+          
+          if (!locationsError && locationsData) {
+            setLocations(locationsData);
+          }
+          
+          // Load branches
+          const { data: branchesData, error: branchesError } = await supabase
+            .from('الفروع')
+            .select('*')
+            .order('اسم_الفرع', { ascending: true });
+          
+          if (!branchesError && branchesData) {
+            setBranches(branchesData);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   // Update ancestor sections when isRoot changes
   useEffect(() => {
@@ -107,21 +175,59 @@ export default function FamilyTreeEntryForm() {
   };
 
   const addWife = () => {
-    appendWife({ name: '', id: Date.now().toString() });
+    appendWife({ 
+      name: '', 
+      id: Date.now().toString(),
+      birthDate: '',
+      birthPlace: '',
+      nationalId: '',
+      notes: ''
+    });
   };
 
   const addChild = () => {
     if (wifeFields.length > 0) {
       appendChild({ 
         name: '', 
-        mother_id: wifeFields[0].id 
+        mother_id: wifeFields[0].id,
+        birthDate: '',
+        birthPlace: '',
+        gender: 'ذكر',
+        nationalId: '',
+        notes: '',
+        additionalNames: []
       });
     } else {
       appendChild({ 
         name: '', 
-        mother_id: '' 
+        mother_id: '',
+        birthDate: '',
+        birthPlace: '',
+        gender: 'ذكر',
+        nationalId: '',
+        notes: '',
+        additionalNames: []
       });
     }
+  };
+
+  const addAdditionalName = () => {
+    appendAdditionalName('');
+  };
+
+  const addChildAdditionalName = (childIndex: number) => {
+    const updatedChildren = [...childrenFields];
+    if (!updatedChildren[childIndex].additionalNames) {
+      updatedChildren[childIndex].additionalNames = [];
+    }
+    updatedChildren[childIndex].additionalNames.push('');
+    setValue('children', updatedChildren);
+  };
+
+  const removeChildAdditionalName = (childIndex: number, nameIndex: number) => {
+    const updatedChildren = [...childrenFields];
+    updatedChildren[childIndex].additionalNames.splice(nameIndex, 1);
+    setValue('children', updatedChildren);
   };
 
   const toggleSection = (section: string, index?: number) => {
@@ -150,14 +256,24 @@ export default function FamilyTreeEntryForm() {
       
       // Example of how you might save to Supabase:
       if (supabase) {
+        // Combine the main name with additional names
+        const fullName = [data.fullName, ...data.additionalNames.filter(name => name.trim() !== '')].join(' ');
+        
         // First, create the main person
         const { data: personData, error: personError } = await supabase
           .from('الأشخاص')
           .insert([{
-            الاسم_الأول: data.fullName,
+            الاسم_الأول: fullName,
             is_root: data.isRoot,
             تاريخ_الميلاد: data.birthDate || null,
+            مكان_الميلاد: data.birthPlace || null,
             تاريخ_الوفاة: data.deathDate || null,
+            رقم_هوية_وطنية: data.nationalId || null,
+            الجنس: data.gender || 'ذكر',
+            الحالة_الاجتماعية: data.maritalStatus || null,
+            المنصب: data.position || null,
+            مستوى_التعليم: data.education || null,
+            معرف_الفرع: data.branchId || null,
             ملاحظات: data.notes || null,
             // The path will be set automatically by the trigger
             path: '0'
@@ -175,7 +291,11 @@ export default function FamilyTreeEntryForm() {
               .insert([{
                 الاسم_الأول: wife.name,
                 اسم_العائلة: data.fullName.split(' ').pop() || '',
-                الحالة_الاجتماعية: 'متزوجة'
+                الحالة_الاجتماعية: 'متزوجة',
+                تاريخ_الميلاد: wife.birthDate || null,
+                مكان_الميلاد: wife.birthPlace || null,
+                رقم_هوية_وطنية: wife.nationalId || null,
+                ملاحظات: wife.notes || null
               }])
               .select()
               .single();
@@ -205,11 +325,19 @@ export default function FamilyTreeEntryForm() {
               // Find the actual wife ID from our saved wives
               const wifeMatch = wivesData.find(w => w.originalId === child.mother_id);
               
+              // Combine the child's name with additional names
+              const childFullName = [child.name, ...(child.additionalNames || []).filter(name => name.trim() !== '')].join(' ');
+              
               const { error: childError } = await supabase
                 .from('الأشخاص')
                 .insert([{
-                  الاسم_الأول: child.name,
+                  الاسم_الأول: childFullName,
                   father_id: personData.id,
+                  تاريخ_الميلاد: child.birthDate || null,
+                  مكان_الميلاد: child.birthPlace || null,
+                  رقم_هوية_وطنية: child.nationalId || null,
+                  الجنس: child.gender || 'ذكر',
+                  ملاحظات: child.notes || null,
                   // The path will be set automatically by the trigger
                   path: '0'
                 }]);
@@ -231,8 +359,16 @@ export default function FamilyTreeEntryForm() {
       setValue('wives', [{ name: '', id: Date.now().toString() }]);
       setValue('children', []);
       setValue('birthDate', '');
+      setValue('birthPlace', '');
       setValue('deathDate', '');
+      setValue('nationalId', '');
+      setValue('gender', 'ذكر');
+      setValue('maritalStatus', '');
+      setValue('position', '');
+      setValue('education', '');
+      setValue('branchId', '');
       setValue('notes', '');
+      setValue('additionalNames', []);
       
     } catch (error) {
       console.error('Error saving family tree data:', error);
@@ -286,14 +422,14 @@ export default function FamilyTreeEntryForm() {
             {/* Full Name */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                الاسم الكامل *
+                الاسم الأول *
               </label>
               <div className="flex gap-2">
                 <input
-                  {...register('fullName', { required: 'الاسم الكامل مطلوب' })}
+                  {...register('fullName', { required: 'الاسم الأول مطلوب' })}
                   type="text"
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                  placeholder="أدخل الاسم الكامل"
+                  placeholder="أدخل الاسم الأول"
                 />
                 <button
                   type="button"
@@ -307,6 +443,37 @@ export default function FamilyTreeEntryForm() {
               {errors.fullName && (
                 <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>
               )}
+            </div>
+
+            {/* Additional Names */}
+            <div className="space-y-3">
+              {additionalNameFields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <input
+                    {...register(`additionalNames.${index}` as const)}
+                    type="text"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                    placeholder={`الاسم الإضافي ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalName(index)}
+                    className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                    title="حذف"
+                  >
+                    <Minus className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+              
+              <button
+                type="button"
+                onClick={addAdditionalName}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                إضافة اسم آخر
+              </button>
             </div>
 
             {/* Root Checkbox */}
@@ -323,10 +490,70 @@ export default function FamilyTreeEntryForm() {
               </label>
             </div>
 
+            {/* Gender */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                الجنس *
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    {...register('gender')}
+                    type="radio"
+                    value="ذكر"
+                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-gray-700">ذكر</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    {...register('gender')}
+                    type="radio"
+                    value="أنثى"
+                    className="w-4 h-4 text-pink-600 border-gray-300 focus:ring-pink-500"
+                  />
+                  <span className="text-gray-700">أنثى</span>
+                </label>
+              </div>
+            </div>
+
+            {/* National ID */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Hash className="w-4 h-4" />
+                رقم الهوية الوطنية
+              </label>
+              <input
+                {...register('nationalId')}
+                type="text"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                placeholder="أدخل رقم الهوية الوطنية"
+                dir="ltr"
+              />
+            </div>
+
+            {/* Marital Status */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                الحالة الاجتماعية
+              </label>
+              <select
+                {...register('maritalStatus')}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+              >
+                <option value="">اختر الحالة الاجتماعية</option>
+                <option value="أعزب">أعزب</option>
+                <option value="متزوج">متزوج</option>
+                <option value="مطلق">مطلق</option>
+                <option value="أرمل">أرمل</option>
+              </select>
+            </div>
+
             {/* Birth and Death Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Calendar className="w-4 h-4" />
                   تاريخ الميلاد
                 </label>
                 <input
@@ -337,13 +564,79 @@ export default function FamilyTreeEntryForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <MapPin className="w-4 h-4" />
+                  مكان الميلاد
+                </label>
+                <select
+                  {...register('birthPlace')}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                >
+                  <option value="">اختر مكان الميلاد</option>
+                  {locations.map((location) => (
+                    <option key={location.معرف_الموقع} value={location.معرف_الموقع}>
+                      {location.الدولة}{location.المنطقة && `, ${location.المنطقة}`}{location.المدينة && `, ${location.المدينة}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Calendar className="w-4 h-4" />
                   تاريخ الوفاة
                 </label>
                 <input
                   {...register('deathDate')}
                   type="date"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Building className="w-4 h-4" />
+                  الفرع العائلي
+                </label>
+                <select
+                  {...register('branchId')}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                >
+                  <option value="">اختر الفرع العائلي</option>
+                  {branches.map((branch) => (
+                    <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
+                      {branch.اسم_الفرع}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Professional Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Building className="w-4 h-4" />
+                  المنصب أو المهنة
+                </label>
+                <input
+                  {...register('position')}
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                  placeholder="أدخل المنصب أو المهنة"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <FileText className="w-4 h-4" />
+                  مستوى التعليم
+                </label>
+                <input
+                  {...register('education')}
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                  placeholder="أدخل مستوى التعليم"
                 />
               </div>
             </div>
@@ -485,26 +778,88 @@ export default function FamilyTreeEntryForm() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <input
-                      {...register(`wives.${index}.name` as const)}
-                      type="text"
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-                      placeholder="اسم الزوجة كاملاً"
-                    />
-                    <input type="hidden" {...register(`wives.${index}.id` as const)} />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updatedWives = [...wifeFields];
-                        updatedWives[index] = { ...updatedWives[index], name: '' };
-                        setValue('wives', updatedWives);
-                      }}
-                      className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                      title="مسح"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <input
+                        {...register(`wives.${index}.name` as const)}
+                        type="text"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                        placeholder="اسم الزوجة كاملاً"
+                      />
+                      <input type="hidden" {...register(`wives.${index}.id` as const)} />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updatedWives = [...wifeFields];
+                          updatedWives[index] = { ...updatedWives[index], name: '' };
+                          setValue('wives', updatedWives);
+                        }}
+                        className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        title="مسح"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Additional Wife Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Calendar className="w-4 h-4" />
+                          تاريخ الميلاد
+                        </label>
+                        <input
+                          {...register(`wives.${index}.birthDate` as const)}
+                          type="date"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <MapPin className="w-4 h-4" />
+                          مكان الميلاد
+                        </label>
+                        <select
+                          {...register(`wives.${index}.birthPlace` as const)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                        >
+                          <option value="">اختر مكان الميلاد</option>
+                          {locations.map((location) => (
+                            <option key={location.معرف_الموقع} value={location.معرف_الموقع}>
+                              {location.الدولة}{location.المنطقة && `, ${location.المنطقة}`}{location.المدينة && `, ${location.المدينة}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Hash className="w-4 h-4" />
+                          رقم الهوية الوطنية
+                        </label>
+                        <input
+                          {...register(`wives.${index}.nationalId` as const)}
+                          type="text"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+                          placeholder="أدخل رقم الهوية الوطنية"
+                          dir="ltr"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <FileText className="w-4 h-4" />
+                        ملاحظات
+                      </label>
+                      <textarea
+                        {...register(`wives.${index}.notes` as const)}
+                        rows={2}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors resize-none"
+                        placeholder="أي معلومات إضافية عن الزوجة"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -531,7 +886,6 @@ export default function FamilyTreeEntryForm() {
                 type="button"
                 onClick={addChild}
                 className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 text-sm"
-                disabled={wifeFields.length === 0 || !wifeFields[0].name}
               >
                 <Plus className="w-4 h-4" />
                 إضافة ابن
@@ -549,7 +903,6 @@ export default function FamilyTreeEntryForm() {
                     type="button"
                     onClick={addChild}
                     className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1 text-sm"
-                    disabled={wifeFields.length === 0 || !wifeFields[0].name}
                   >
                     <UserPlus className="w-4 h-4" />
                     إضافة ابن
@@ -572,13 +925,14 @@ export default function FamilyTreeEntryForm() {
                       </button>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-4">
+                      {/* Child Name */}
                       <div className="flex gap-2">
                         <input
                           {...register(`children.${index}.name` as const)}
                           type="text"
                           className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="اسم الابن كاملاً"
+                          placeholder="الاسم الأول للابن"
                         />
                         <button
                           type="button"
@@ -594,6 +948,43 @@ export default function FamilyTreeEntryForm() {
                         </button>
                       </div>
 
+                      {/* Child Additional Names */}
+                      <div className="space-y-3">
+                        {field.additionalNames && field.additionalNames.map((name, nameIndex) => (
+                          <div key={`${field.id}-name-${nameIndex}`} className="flex gap-2">
+                            <input
+                              value={name}
+                              onChange={(e) => {
+                                const updatedChildren = [...childrenFields];
+                                updatedChildren[index].additionalNames[nameIndex] = e.target.value;
+                                setValue('children', updatedChildren);
+                              }}
+                              type="text"
+                              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              placeholder={`الاسم الإضافي ${nameIndex + 1}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeChildAdditionalName(index, nameIndex)}
+                              className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                              title="حذف"
+                            >
+                              <Minus className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        
+                        <button
+                          type="button"
+                          onClick={() => addChildAdditionalName(index)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          إضافة اسم آخر للابن
+                        </button>
+                      </div>
+
+                      {/* Mother Selection */}
                       {wifeFields.length > 0 && (
                         <div className="space-y-2">
                           <label className="block text-sm font-medium text-gray-700">
@@ -612,6 +1003,93 @@ export default function FamilyTreeEntryForm() {
                           </select>
                         </div>
                       )}
+
+                      {/* Child Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <Calendar className="w-4 h-4" />
+                            تاريخ الميلاد
+                          </label>
+                          <input
+                            {...register(`children.${index}.birthDate` as const)}
+                            type="date"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <MapPin className="w-4 h-4" />
+                            مكان الميلاد
+                          </label>
+                          <select
+                            {...register(`children.${index}.birthPlace` as const)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          >
+                            <option value="">اختر مكان الميلاد</option>
+                            {locations.map((location) => (
+                              <option key={location.معرف_الموقع} value={location.معرف_الموقع}>
+                                {location.الدولة}{location.المنطقة && `, ${location.المنطقة}`}{location.المدينة && `, ${location.المدينة}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <User className="w-4 h-4" />
+                            الجنس
+                          </label>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                {...register(`children.${index}.gender` as const)}
+                                type="radio"
+                                value="ذكر"
+                                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              />
+                              <span className="text-gray-700">ذكر</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                {...register(`children.${index}.gender` as const)}
+                                type="radio"
+                                value="أنثى"
+                                className="w-4 h-4 text-pink-600 border-gray-300 focus:ring-pink-500"
+                              />
+                              <span className="text-gray-700">أنثى</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <Hash className="w-4 h-4" />
+                            رقم الهوية الوطنية
+                          </label>
+                          <input
+                            {...register(`children.${index}.nationalId` as const)}
+                            type="text"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            placeholder="أدخل رقم الهوية الوطنية"
+                            dir="ltr"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <FileText className="w-4 h-4" />
+                          ملاحظات
+                        </label>
+                        <textarea
+                          {...register(`children.${index}.notes` as const)}
+                          rows={2}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                          placeholder="أي معلومات إضافية عن الابن"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))
