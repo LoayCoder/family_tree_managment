@@ -426,7 +426,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
               <TreePine className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-              شجرة العائلة
+              شجرة آل عمير
             </h1>
           </div>
           

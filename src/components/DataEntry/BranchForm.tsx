@@ -92,7 +92,7 @@ export default function BranchForm({ onSuccess, onCancel }: BranchFormProps) {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   إضافة فرع عائلي جديد
                 </h1>
-                <p className="text-gray-600">إنشاء فرع جديد للعائلة مع الموقع الجغرافي</p>
+                <p className="text-gray-600">إنشاء فرع جديد لآل عمير مع الموقع الجغرافي</p>
               </div>
             </div>
             <button
@@ -216,8 +216,8 @@ export default function BranchForm({ onSuccess, onCancel }: BranchFormProps) {
               <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                 <h4 className="font-medium text-purple-800 mb-2">مثال:</h4>
                 <div className="text-sm text-purple-700 space-y-1">
-                  <p><strong>اسم الفرع:</strong> فرع الرياض</p>
-                  <p><strong>وصف الفرع:</strong> فرع العائلة في مدينة الرياض، تأسس في عام 1950</p>
+                  <p><strong>اسم الفرع:</strong> فرع آل عمير بالرياض</p>
+                  <p><strong>وصف الفرع:</strong> فرع آل عمير في مدينة الرياض، تأسس في عام 1950</p>
                   <p><strong>الفرع الأصل:</strong> الفرع الرئيسي</p>
                   <p><strong>الموقع:</strong> السعودية، منطقة الرياض، الرياض</p>
                 </div>
