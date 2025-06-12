@@ -41,7 +41,10 @@ export const MiniChildCard: React.FC<MiniChildCardProps> = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className="text-xs font-semibold text-slate-800 break-words leading-snug">{child.displayData.name}</h4>
+        <h4 className="text-xs font-semibold text-slate-800 leading-snug break-words text-right w-full" dir="rtl">
+  {child.displayData.name}
+</h4>
+
         <p className="text-xs text-slate-600 truncate">{ageDisplay}</p>
         {child.quickStats.isMarried && child.quickStats.spouse && (
           <div className="flex items-center gap-0.5 text-xs text-red-600">
