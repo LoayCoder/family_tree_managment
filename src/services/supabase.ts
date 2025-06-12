@@ -158,42 +158,27 @@ export const legacyFamilyService = {
 
     const memberId = parseInt(id);
 
-    // First, check if this member has any children
-    const { data: children, error: childrenError } = await supabase
+    // First, update any children to remove this member as their father
+    const { error: fatherUpdateError } = await supabase
       .from('الأشخاص')
-      .select('id, الاسم_الأول')
+      .update({ father_id: null })
       .eq('father_id', memberId);
 
-    if (childrenError) {
-      throw childrenError;
+    if (fatherUpdateError) {
+      throw fatherUpdateError;
     }
 
-    // If children exist, prevent deletion
-    if (children && children.length > 0) {
-      const childrenNames = children.map(child => child.الاسم_الأول).join('، ');
-      throw new DeletionConstraintError(
-        `لا يمكن حذف هذا العضو لأنه والد لأعضاء آخرين في العائلة: ${childrenNames}. يجب حذف الأطفال أولاً أو تغيير والدهم قبل حذف هذا العضو.`
-      );
-    }
-
-    // Also check if this member is referenced as a mother
-    const { data: childrenAsMother, error: motherError } = await supabase
+    // Also update any children to remove this member as their mother
+    const { error: motherUpdateError } = await supabase
       .from('الأشخاص')
-      .select('id, الاسم_الأول')
+      .update({ mother_id: null })
       .eq('mother_id', memberId);
 
-    if (motherError) {
-      throw motherError;
+    if (motherUpdateError) {
+      throw motherUpdateError;
     }
 
-    if (childrenAsMother && childrenAsMother.length > 0) {
-      const childrenNames = childrenAsMother.map(child => child.الاسم_الأول).join('، ');
-      throw new DeletionConstraintError(
-        `لا يمكن حذف هذا العضو لأنه والدة لأعضاء آخرين في العائلة: ${childrenNames}. يجب حذف الأطفال أولاً أو تغيير والدتهم قبل حذف هذا العضو.`
-      );
-    }
-
-    // If no children, proceed with deletion
+    // Now proceed with deletion
     const { error } = await supabase
       .from('الأشخاص')
       .delete()
