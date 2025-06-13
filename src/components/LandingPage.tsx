@@ -63,7 +63,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 sm:py-20 md:py-24">
+ <section className="py-16 sm:py-20 md:py-24">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-6xl mx-auto">
@@ -120,7 +120,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
           </div>
         </div>
       </section>
-    </div>
+
       {/* Noble Lineage Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-r from-emerald-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
