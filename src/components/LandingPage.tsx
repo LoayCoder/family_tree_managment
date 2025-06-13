@@ -80,7 +80,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               </h2>
 
               {/* Decorative Line */}
-              <div className="flex items-center justify-center mb-10 sm:mb-12">
+              <div className="flex items-center justify-center mb-10 sm:mb-8">
                 <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
                 <div className="mx-4 p-2 bg-emerald-100 rounded-full">
                   <Star className="w-4 h-4 text-emerald-600" />
