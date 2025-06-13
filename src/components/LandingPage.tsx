@@ -69,19 +69,20 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
             <div className="max-w-6xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
                 <span className="block mb-2">الأشراف</span>
-                <span className="block bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700 bg-clip-text text-transparent mb-8">
+                <span className="block bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700 bg-clip-text text-transparent mb-4">
                   بني عمير النعامية
                 </span>
-              
+
+                س
               </h2>
 
               {/* Decorative Line */}
-              <div className="flex items-center justify-center mb-10 sm:mb-18">
+              <div className="flex items-center justify-center mb-10 sm:mb-12">
                 <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
                 <div className="mx-4 p-2 bg-emerald-100 rounded-full">
                   <Star className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-ء"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
               </div>
 
               <div className="max-w-5xl mx-auto">
