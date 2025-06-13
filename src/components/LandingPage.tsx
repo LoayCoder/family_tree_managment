@@ -4,7 +4,7 @@ import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Hear
 interface LandingPageProps {
   onShowAuth: (mode: 'login' | 'signup') => void;
 }
-س
+
 export default function LandingPage({ onShowAuth }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
