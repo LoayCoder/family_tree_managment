@@ -122,7 +122,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
       </section>
     </div>
   );
-}
+
       {/* Noble Lineage Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-r from-emerald-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
