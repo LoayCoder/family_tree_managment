@@ -64,7 +64,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
 
       {/* Hero Section */}
       <section className="py-16 sm:py-20 md:py-24">
-        <div className="max-w-7x2 mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-1 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-5xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 sm:mb-8 leading-tight ">
