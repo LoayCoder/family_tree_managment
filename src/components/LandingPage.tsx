@@ -1,8 +1,7 @@
 import React from 'react';
-import { TreePine, Users, Database, Shield, Star, ArrowRight, LogIn, UserPlus } from 'lucide-react';
+import { TreePine, LogIn, UserPlus, ArrowRight } from 'lucide-react';
 import ResponsiveContainer from './responsive/ResponsiveContainer';
 import ResponsiveFlex from './responsive/ResponsiveFlex';
-import ResponsiveGrid from './responsive/ResponsiveGrid';
 import ResponsiveButton from './responsive/ResponsiveButton';
 import ResponsiveText from './responsive/ResponsiveText';
 
@@ -26,7 +25,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                     شجرة آل عمير
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-600">رمز للفخر والانتماء</p>
+                  <p className="text-xs sm:text-sm text-gray-600">تاريخ عريق وفخر متجدد</p>
                 </div>
               </ResponsiveFlex>
               <ResponsiveFlex gap="sm" className="hide-on-mobile">
@@ -44,7 +43,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   size="md"
                   icon={<UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />}
                 >
-                  انضم لنا
+                  انضم إلى العائلة
                 </ResponsiveButton>
               </ResponsiveFlex>
               <div className="show-on-mobile">
@@ -74,13 +73,13 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
           <div className="text-center">
             <div className="max-w-4xl mx-auto">
               <ResponsiveText as="h2" size="4xl" weight="bold" color="gray-800" className="mb-4 sm:mb-6 leading-tight">
-                فخر آل عمير
+                قبيلة آل عمير
                 <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  وإرث يُروى للأجيال
+                  ماضٍ مجيد وحاضر نفخر به
                 </span>
               </ResponsiveText>
               <ResponsiveText size="lg" color="gray-600" className="mb-8 sm:mb-12 leading-relaxed max-w-3xl mx-auto">
-                هذا المشروع هو نافذتنا لحفظ النسب، وتخليد ذكرى الأجداد، واستذكار أمجاد قبيلة آل عمير بكل فخر ومحبة، وإهداء لكل فرد ينتمي لهذا الكيان العظيم.
+                مرحباً بكم في صفحة آل عمير التي تجمع أبناء العائلة تحت مظلة واحدة من المحبة والترابط، وتوثق إرثنا العريق الممتد عبر الأجيال، من قصص الأجداد إلى إنجازات الأحفاد. هذه الشجرة ليست نظاماً إدارياً، بل هي هوية لكل من ينتمي إلى هذه الأسرة الكريمة.
               </ResponsiveText>
               <ResponsiveFlex 
                 direction={{ xs: 'col', sm: 'row' }} 
@@ -96,7 +95,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   iconPosition="left"
                   className="transform hover:scale-105 shadow-xl"
                 >
-                  كن جزءًا من شجرة المجد
+                  شارك في صنع تاريخنا
                   <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" />
                 </ResponsiveButton>
                 <ResponsiveButton
