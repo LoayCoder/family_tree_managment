@@ -254,20 +254,20 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 sm:py-20 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600">
+      <section className="py-16 sm:py-20 bg-gradient-to-r from-emerald-500 to-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-4xl mx-auto">
               <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 sm:mb-8">
                 كن جزءاً من تاريخ بني عمير العريق
               </h3>
-              <p className="text-xl sm:text-2xl text-amber-100 mb-8 sm:mb-10 leading-relaxed">
+              <p className="text-xl sm:text-2xl text-emerald-100 mb-8 sm:mb-10 leading-relaxed">
                 انضم إلى عائلتك الكبيرة واحتفِ بانتمائك لهذه القبيلة العريقة
               </p>
               
               <button
                 onClick={() => onShowAuth('signup')}
-                className="inline-flex items-center gap-4 px-10 py-5 bg-white text-amber-700 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
+                className="inline-flex items-center gap-4 px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
               >
                 <Heart className="w-7 h-7" />
                 سجل انتماءك لبني عمير
@@ -279,24 +279,24 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
       </section>
 
       {/* Footer */}
-      <footer className="bg-amber-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl">
+              <div className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl">
                 <TreePine className="w-8 h-8 text-white" />
               </div>
               <div>
                 <h4 className="text-2xl font-bold">بني عمير</h4>
-                <p className="text-amber-200">أصالة وعراقة</p>
+                <p className="text-gray-400">أصالة وعراقة</p>
               </div>
             </div>
             
             <div className="text-center md:text-right">
-              <p className="text-amber-200 text-lg">
+              <p className="text-gray-400 text-lg">
                 فخر الانتماء لقبيلة بني عمير العريقة
               </p>
-              <p className="text-amber-300 text-sm mt-2">
+              <p className="text-gray-400 text-sm mt-2">
                 © 2025 جميع الحقوق محفوظة لأبناء بني عمير
               </p>
             </div>
