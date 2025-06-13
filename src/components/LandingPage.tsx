@@ -73,6 +73,8 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   بني عمير النعامية
                 </span>
 
+
+                
               </h2>
 
               {/* Decorative Line */}
