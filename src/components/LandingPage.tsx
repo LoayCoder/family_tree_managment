@@ -63,7 +63,66 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
       </header>
 
       {/* Hero Section */}
-      
+      <section className="py-16 sm:py-20 md:py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
+                <span className="block mb-2">الأشراف</span>
+                <span className="block bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700 bg-clip-text text-transparent mb-4">
+                  بني عمير النعامية
+                </span>
+                <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-gray-700 font-medium">
+                  شرف النسب وعراقة التاريخ
+                </span>
+              </h2>
+
+              {/* Decorative Line */}
+              <div className="flex items-center justify-center mb-10 sm:mb-12">
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
+                <div className="mx-4 p-2 bg-emerald-100 rounded-full">
+                  <Star className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
+              </div>
+
+              <div className="max-w-5xl mx-auto">
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-700 mb-12 sm:mb-16 leading-relaxed font-medium">
+                  من الأغصان السامية في نسب الأشراف، أصحاب النسب الطاهر المتصل برسول الله صلى الله عليه وسلم.
+                </p>
+
+                <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 sm:p-10 shadow-xl border border-emerald-100 mb-12 sm:mb-16">
+                  <p className="text-base sm:text-lg md:text-xl text-gray-800 leading-relaxed">
+                    قبيلة شريفة حسنية النسب، موثقة الأصول في المصادر التاريخية المعتبرة، ساكنة الجرادية في جازان المباركة. نحتفي بشرف الانتماء لهذا النسب الطاهر ونحافظ على تراث الأجداد الأطهار للأجيال القادمة.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
+                  <button
+                    onClick={() => onShowAuth('signup')}
+                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
+                  >
+                    <Heart className="w-6 h-6" />
+                    انضم لعائلتك الكبيرة
+                    <ArrowRight className="w-6 h-6" />
+                  </button>
+
+                  <button
+                    onClick={() => onShowAuth('login')}
+                    className="flex items-center gap-3 px-8 py-4 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all"
+                  >
+                    <LogIn className="w-6 h-6" />
+                    عضو في القبيلة؟ ادخل هنا
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
       {/* Noble Lineage Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-r from-emerald-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
