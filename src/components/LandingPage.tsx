@@ -198,7 +198,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   <Users className="w-10 h-10 text-white" />
                 </div>
                 <h4 className="text-2xl font-bold text-gray-800 mb-6">
-                  الشيوخ والعلماء الموثقون للنسب الشريف
+                  الشيوخ والعلماء الموثقون للنسب بني عمير
                 </h4>
               </div>
               
