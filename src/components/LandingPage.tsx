@@ -64,7 +64,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
 
       {/* Hero Section */}
  <section className="py-16 sm:py-20 md:py-24">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-100 lg:px-8">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-6xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
@@ -72,11 +72,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 <span className="block bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700 bg-clip-text text-transparent mb-8">
                   بني عمير النعامية
                 </span>
-
-
-
-
-                
+              
               </h2>
 
               {/* Decorative Line */}
@@ -85,7 +81,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 <div className="mx-4 p-2 bg-emerald-100 rounded-full">
                   <Star className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-32"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-80"></div>
               </div>
 
               <div className="max-w-5xl mx-auto">
