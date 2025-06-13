@@ -69,8 +69,6 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
             <div className="max-w-5xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 sm:mb-8 leading-tight">
                 الأشراف بني عمير 
-                </span>
-                
                 <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                   شرف النسب وعراقة التاريخ
                 </span>
