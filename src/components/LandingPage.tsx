@@ -74,6 +74,8 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 </span>
 
 
+
+
                 
               </h2>
 
