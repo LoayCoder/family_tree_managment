@@ -81,7 +81,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 <div className="mx-4 p-2 bg-emerald-100 rounded-full">
                   <Star className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-80"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-ء"></div>
               </div>
 
               <div className="max-w-5xl mx-auto">
