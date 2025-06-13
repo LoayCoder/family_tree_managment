@@ -69,7 +69,6 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
             <div className="max-w-5xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 sm:mb-8 leading-tight">
                 الأشراف بني عمير النعامية
-                 </h2>
                 <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                   شرف النسب وعراقة التاريخ
                 </span>
@@ -245,8 +244,8 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <p className="text-purple-700 font-medium">د. الشريف محمد ربيع (الصغير) بن هادي بن عمير النعمي</p>
                   <p className="text-purple-700 font-medium">أ. الشريف علي بن هادي بن عمير النعمي</p>
+                  <p className="text-purple-700 font-medium">الشريف أ.محمد بن أحمد بن هادي بن عمير النعمي</p>
                   <p className="text-purple-700 font-medium">أ. الشريف لؤي بن إبراهيم محمد بن أحمد بن هادي بن جوهر بن عمير النعمي</p>
-                  <p className="text-purple-700 font-medium">الشريف محمد بن أحمد بن هادي بن عمير النعمي</p>
                 </div>
               </div>
             </div>
