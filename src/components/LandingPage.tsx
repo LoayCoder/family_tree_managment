@@ -73,7 +73,6 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   بني عمير النعامية
                 </span>
                 <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-gray-800 font-medium">
-                  بني عمير النعامية
                 </span>
               </h2>
 
