@@ -61,10 +61,23 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
           </div>
         </div>
       </header>
-
-      {/* Hero Section */}
-      
-
+{/* Hero Section */}
+      <section className="relative py-20 sm:py-24 md:py-32 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50"></div>
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3Ccircle cx='53' cy='7' r='7'/%3E%3Ccircle cx='7' cy='53' r='7'/%3E%3Ccircle cx='53' cy='53' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            {/* Noble Badge */}
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/80 backdrop-blur-sm border-2 border-emerald-200 shadow-lg mb-8">
+              <Crown className="w-5 h-5 text-emerald-600 mr-2" />
+              <span className="text-emerald-800 font-semibold text-sm">النسب الشريف الحسني</span>
+            </div>
+            
+            <div className="max-w-6xl mx-auto">
               <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
                 <span className="block mb-2">الأشراف</span>
                 <span className="block bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700 bg-clip-text text-transparent mb-4">
@@ -75,8 +88,6 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 </span>
               </h2>
 
-                
-              
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
                 <button
                   onClick={() => onShowAuth('signup')}
