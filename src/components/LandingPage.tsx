@@ -67,11 +67,11 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-5xl mx-auto">
-              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 mb-6 sm:mb-8 leading-tight text-center mb-100">
-                الأشرافبب بني عمير 
-                <span className="block bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                  شرف النسب وعراقة التاريخ
-                </span>
+              <h2 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 leading-tight mb-6">
+                  <span className="block">الأشراف بني عمير</span>
+                  <span className="block mt-4 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                    شرف النسب وعراقة التاريخ
+                  </span>
               </h2>
               <p className="text-lg sm:text-xl md:text-2xl text-gray-700 mb-10 sm:mb-12 leading-relaxed max-w-4xl mx-auto font-medium">
                 من الأغصان السامية في نسب الأشراف، أصحاب النسب الطاهر المتصل برسول الله صلى الله عليه وسلم. 
