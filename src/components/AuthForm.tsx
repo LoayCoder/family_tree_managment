@@ -576,8 +576,6 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
               )}
             </button>
 
-            
-
             {/* Switch Mode */}
             <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-gray-600 mb-3">
