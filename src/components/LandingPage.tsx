@@ -67,7 +67,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="max-w-5xl mx-auto">
-              <h2 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 leading-tight mb-6">
+              <h2 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-800 leading-tight mb-10">
                   <span className="block">الأشراف بني عمير</span>
                   <span className="block mt-4 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                     شرف النسب وعراقة التاريخ
