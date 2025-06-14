@@ -228,12 +228,13 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                     <p className="text-emerald-700">الشيخ الشريف حسن بن علي بن محمد بن حسين</p>
                     <p className="text-emerald-700">الشيخ الشريف عبد الوهاب بن الحسن بن الحسين بن قاضي النعمي</p>
                     <p className="text-emerald-700">الشيخ الشريف محمد بن طاهر بن العلوي بن الحسني</p>
-                    <p className="text-emerald-700">السيد الأستاذ أحمد بن محمد بن مغربي بن النعمي</p>
+                    <p className="text-emerald-700">السيد الأستاذ أحمد بن محمد بن مغربي بن النعمي</p
+                    <p className="text-emerald-700">السيد حسن بن علي بن محمد حسين حربوش</p>                                                                            
                   </div>
                 </div>
                 
                 <div className="bg-blue-50 rounded-2xl p-6">
-                  <h5 className="text-lg font-bold text-blue-800 mb-4">الباحثون النسابة المختصون</h5>
+                  <h5 className="text-lg font-bold text-blue-800 mb-4">المشايخ الباحثون النسابة المختصون</h5>
                   <div className="space-y-3 text-sm">
                     <p className="text-blue-700">الشيخ الشريف الباحث النسابة أحمد بن محمد بن يحيى بن النعمي</p>
                     <p className="text-blue-700">الشيخ الشريف الباحث النسابة محمد بن إبراهيم بن مناجي بن قيقب</p>
@@ -260,8 +261,10 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <p className="text-purple-700 font-medium">د. الشريف محمد ربيع (الصغير) بن هادي بن عمير النعمي</p>
-                  <p className="text-purple-700 font-medium">أ. الشريف علي بن هادي بن عمير النعمي</p>
-                  <p className="text-purple-700 font-medium">الشريف أ.محمد بن أحمد بن هادي بن عمير النعمي</p>
+                  <p className="text-purple-700 font-medium">أ. الشريف محمد بن علي بن هادي بن عمير النعمي</p>
+                  <p className="text-purple-700 font-medium">العقيد طيار عادل بن محمد بن محمد عمير النعمي</p>
+                  <p className="text-purple-700 font-medium">د. محمد بن احمد بن ابراهيم عمير النعمي (مدير عام تعليم مكة سابقاً)</p>
+                  <p className="text-purple-700 font-medium">أ. لشريف محمد بن أحمد بن هادي بن عمير النعميي</p>
                   <p className="text-purple-700 font-medium">أ. الشريف لؤي بن إبراهيم محمد بن أحمد بن هادي بن جوهر بن عمير النعمي</p>
                 </div>
               </div>
