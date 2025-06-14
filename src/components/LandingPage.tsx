@@ -228,7 +228,7 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                     <p className="text-emerald-700">الشيخ الشريف حسن بن علي بن محمد بن حسين</p>
                     <p className="text-emerald-700">الشيخ الشريف عبد الوهاب بن الحسن بن الحسين بن قاضي النعمي</p>
                     <p className="text-emerald-700">الشيخ الشريف محمد بن طاهر بن العلوي بن الحسني</p>
-                    <p className="text-emerald-700">السيد الأستاذ أحمد بن محمد بن مغربي بن النعمي</p
+                    <p className="text-emerald-700">السيد الأستاذ أحمد بن محمد بن مغربي بن النعمي</p>
                     <p className="text-emerald-700">السيد حسن بن علي بن محمد حسين حربوش</p>                                                                            
                   </div>
                 </div>
