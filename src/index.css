@@ -395,6 +395,73 @@ img {
   height: auto;
 }
 
+/* Tree visualization styles */
+.tree-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.tree-container .rd3t-tree-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.tree-container .rd3t-svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Custom tree node styles */
+.rd3t-node text {
+  font-family: 'Noto Sans Arabic', 'Arial', sans-serif !important;
+  direction: rtl;
+  text-anchor: middle;
+}
+
+.rd3t-link {
+  fill: none;
+  stroke: #10b981;
+  stroke-width: 2px;
+  transition: stroke 0.3s ease;
+}
+
+.rd3t-link:hover {
+  stroke: #059669;
+  stroke-width: 3px;
+}
+
+/* Tree node hover effects */
+.rd3t-node circle {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.rd3t-node:hover circle {
+  stroke-width: 4px !important;
+  filter: brightness(1.1);
+}
+
+/* Tree container responsive adjustments */
+@media (max-width: 768px) {
+  .tree-container {
+    height: 500px !important;
+  }
+  
+  .rd3t-node text {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tree-container {
+    height: 400px !important;
+  }
+  
+  .rd3t-node text {
+    font-size: 8px !important;
+  }
+}
+
 /* Responsive tables */
 .table-responsive {
   width: 100%;
