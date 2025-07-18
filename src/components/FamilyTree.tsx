@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2 } from 'lucide-react';
+import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2, X, Calendar, Phone, FileText, Edit3, Trash2 } from 'lucide-react';
 import Tree from 'react-d3-tree';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
 import { familyService, DeletionConstraintError } from '../services/supabase';
