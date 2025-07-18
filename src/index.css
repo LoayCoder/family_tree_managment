@@ -441,6 +441,20 @@ img {
   filter: brightness(1.1);
 }
 
+/* Improved tree node text styling */
+.rd3t-node text {
+  font-family: 'Noto Sans Arabic', 'Arial', sans-serif !important;
+  direction: rtl;
+  text-anchor: middle;
+  font-weight: 600 !important;
+}
+
+/* Tree node details button hover effect */
+.rd3t-node g:hover circle[fill="#3b82f6"] {
+  fill: #2563eb !important;
+  transform: scale(1.1);
+}
+
 /* Tree container responsive adjustments */
 @media (max-width: 768px) {
   .tree-container {
@@ -448,7 +462,7 @@ img {
   }
   
   .rd3t-node text {
-    font-size: 10px !important;
+    font-size: 8px !important;
   }
 }
 
@@ -458,7 +472,7 @@ img {
   }
   
   .rd3t-node text {
-    font-size: 8px !important;
+    font-size: 7px !important;
   }
 }
 

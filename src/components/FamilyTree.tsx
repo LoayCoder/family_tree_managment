@@ -174,6 +174,8 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
   const renderCustomNode = ({ nodeDatum, toggleNode }: any) => {
     const isAlive = nodeDatum.attributes?.isAlive !== false;
     const level = nodeDatum.attributes?.level || 0;
+    const hasChildren = nodeDatum.children && nodeDatum.children.length > 0;
+    const childrenCount = nodeDatum.children ? nodeDatum.children.length : 0;
     
     // Color based on generation level
     const getNodeColor = (level: number) => {
@@ -183,11 +185,19 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
 
     const nodeColor = getNodeColor(level);
     
+    // Truncate name if too long
+    const displayName = nodeDatum.name.length > 12 ? nodeDatum.name.substring(0, 12) + '...' : nodeDatum.name;
+    
+    // Split name into multiple lines if needed
+    const nameWords = displayName.split(' ');
+    const firstLine = nameWords[0] || '';
+    const secondLine = nameWords.slice(1).join(' ');
+    
     return (
       <g>
         {/* Node circle */}
         <circle
-          r={25}
+          r={30}
           fill={isAlive ? nodeColor : '#6b7280'}
           stroke={isAlive ? '#ffffff' : '#9ca3af'}
           strokeWidth={3}
@@ -198,48 +208,65 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         
         {/* Status indicator */}
         <circle
-          r={6}
-          cx={18}
-          cy={-18}
+          r={5}
+          cx={20}
+          cy={-20}
           fill={isAlive ? '#10b981' : '#ef4444'}
           stroke="#ffffff"
           strokeWidth={2}
         />
         
-        {/* Name text */}
+        {/* Name text - First line */}
         <text
           fill="#ffffff"
           strokeWidth="0"
           x={0}
-          y={5}
+          y={secondLine ? -2 : 3}
           textAnchor="middle"
-          fontSize="12"
+          fontSize="10"
           fontWeight="bold"
           style={{ pointerEvents: 'none' }}
         >
-          {nodeDatum.name.length > 15 ? nodeDatum.name.substring(0, 15) + '...' : nodeDatum.name}
+          {firstLine}
         </text>
+        
+        {/* Name text - Second line */}
+        {secondLine && (
+          <text
+            fill="#ffffff"
+            strokeWidth="0"
+            x={0}
+            y={8}
+            textAnchor="middle"
+            fontSize="9"
+            fontWeight="bold"
+            style={{ pointerEvents: 'none' }}
+          >
+            {secondLine}
+          </text>
+        )}
         
         {/* Level indicator */}
         <text
           fill="#ffffff"
           strokeWidth="0"
           x={0}
-          y={-35}
+          y={-40}
           textAnchor="middle"
-          fontSize="10"
+          fontSize="8"
+          fontWeight="normal"
           style={{ pointerEvents: 'none' }}
         >
           الجيل {level + 1}
         </text>
         
         {/* Children count indicator */}
-        {nodeDatum.children && nodeDatum.children.length > 0 && (
+        {hasChildren && (
           <g>
             <circle
-              r={8}
+              r={7}
               cx={0}
-              cy={35}
+              cy={40}
               fill="#fbbf24"
               stroke="#ffffff"
               strokeWidth={2}
@@ -248,16 +275,47 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               fill="#ffffff"
               strokeWidth="0"
               x={0}
-              y={40}
+              y={44}
               textAnchor="middle"
-              fontSize="10"
+              fontSize="8"
               fontWeight="bold"
               style={{ pointerEvents: 'none' }}
             >
-              {nodeDatum.children.length}
+              {childrenCount}
             </text>
           </g>
         )}
+        
+        {/* Details button */}
+        <g
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNodeClick(nodeDatum);
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          <circle
+            r={6}
+            cx={-20}
+            cy={-20}
+            fill="#3b82f6"
+            stroke="#ffffff"
+            strokeWidth={2}
+            opacity={0.9}
+          />
+          <text
+            fill="#ffffff"
+            strokeWidth="0"
+            x={-20}
+            y={-17}
+            textAnchor="middle"
+            fontSize="8"
+            fontWeight="bold"
+            style={{ pointerEvents: 'none' }}
+          >
+            ℹ
+          </text>
+        </g>
       </g>
     );
   };
@@ -407,8 +465,8 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 translate={translate}
                 zoom={zoom}
                 scaleExtent={{ min: 0.3, max: 3 }}
-                separation={{ siblings: 1.5, nonSiblings: 2 }}
-                nodeSize={{ x: 200, y: 150 }}
+                separation={{ siblings: 1.2, nonSiblings: 1.5 }}
+                nodeSize={{ x: 150, y: 120 }}
                 renderCustomNodeElement={renderCustomNode}
                 onNodeClick={handleNodeClick}
                 pathFunc="diagonal"
@@ -416,7 +474,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 enableLegacyTransitions={true}
                 collapsible={true}
                 initialDepth={2}
-                depthFactor={150}
+                depthFactor={120}
                 styles={{
                   links: {
                     stroke: '#10b981',
@@ -465,93 +523,123 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
 
         {/* Selected Node Details */}
         {selectedNode && (
-          <div className="border-t border-gray-200 p-4 sm:p-6 bg-gray-50">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">{selectedNode.name}</h3>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-                    الجيل {(selectedNode.attributes?.level || 0) + 1}
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    selectedNode.attributes?.isAlive 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {selectedNode.attributes?.isAlive ? 'على قيد الحياة' : 'متوفى'}
-                  </span>
-                  {selectedNode.attributes?.gender && (
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      selectedNode.attributes.gender === 'ذكر'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-pink-100 text-pink-700'
-                    }`}>
-                      {selectedNode.attributes.gender}
-                    </span>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedNode(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-emerald-500 to-blue-600 p-6 text-white">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">{selectedNode.name}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
+                        الجيل {(selectedNode.attributes?.level || 0) + 1}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        selectedNode.attributes?.isAlive 
+                          ? 'bg-green-500/20 backdrop-blur-sm' 
+                          : 'bg-gray-500/20 backdrop-blur-sm'
+                      }`}>
+                        {selectedNode.attributes?.isAlive ? 'على قيد الحياة' : 'متوفى'}
+                      </span>
+                      {selectedNode.attributes?.gender && (
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          selectedNode.attributes.gender === 'ذكر'
+                            ? 'bg-blue-500/20 backdrop-blur-sm'
+                            : 'bg-pink-500/20 backdrop-blur-sm'
+                        }`}>
+                          {selectedNode.attributes.gender}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedNode(null)}
+                    className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {selectedNode.attributes?.birthDate && (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <span className="block text-sm text-blue-600 font-medium">تاريخ الميلاد</span>
+                        <span className="block text-sm text-gray-800 font-semibold">
+                          {new Date(selectedNode.attributes.birthDate).toLocaleDateString('ar-SA')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {selectedNode.attributes?.deathDate && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <Calendar className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <span className="block text-sm text-gray-600 font-medium">تاريخ الوفاة</span>
+                        <span className="block text-sm text-gray-800 font-semibold">
+                          {new Date(selectedNode.attributes.deathDate).toLocaleDateString('ar-SA')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {selectedNode.attributes?.phone && (
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <Phone className="w-5 h-5 text-emerald-600" />
+                      <div>
+                        <span className="block text-sm text-emerald-600 font-medium">الهاتف</span>
+                        <span className="block text-sm text-gray-800 font-semibold font-mono" dir="ltr">
+                          {selectedNode.attributes.phone}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {selectedNode.children && selectedNode.children.length > 0 && (
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                      <Users className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <span className="block text-sm text-amber-600 font-medium">عدد الأطفال</span>
+                        <span className="block text-sm text-gray-800 font-semibold">{selectedNode.children.length}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
+
+                {selectedNode.attributes?.notes && (
+                  <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-amber-600 mt-0.5" />
+                      <div>
+                        <span className="block text-sm font-medium text-amber-800 mb-2">ملاحظات</span>
+                        <p className="text-amber-700 leading-relaxed">{selectedNode.attributes.notes}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => setSelectedNode(null)}
-                className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                ×
-              </button>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {selectedNode.attributes?.birthDate && (
-                <div>
-                  <span className="font-medium text-gray-600">تاريخ الميلاد:</span>
-                  <span className="mr-2 text-gray-800">
-                    {new Date(selectedNode.attributes.birthDate).toLocaleDateString('ar-SA')}
-                  </span>
+              {/* Modal Footer */}
+              <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl">
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => handleEdit(selectedNode.attributes?.id)}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    تعديل
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selectedNode.attributes?.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    حذف
+                  </button>
                 </div>
-              )}
-              {selectedNode.attributes?.deathDate && (
-                <div>
-                  <span className="font-medium text-gray-600">تاريخ الوفاة:</span>
-                  <span className="mr-2 text-gray-800">
-                    {new Date(selectedNode.attributes.deathDate).toLocaleDateString('ar-SA')}
-                  </span>
-                </div>
-              )}
-              {selectedNode.attributes?.phone && (
-                <div>
-                  <span className="font-medium text-gray-600">الهاتف:</span>
-                  <span className="mr-2 text-gray-800 font-mono" dir="ltr">
-                    {selectedNode.attributes.phone}
-                  </span>
-                </div>
-              )}
-              {selectedNode.children && (
-                <div>
-                  <span className="font-medium text-gray-600">عدد الأطفال:</span>
-                  <span className="mr-2 text-gray-800">{selectedNode.children.length}</span>
-                </div>
-              )}
-            </div>
-
-            {selectedNode.attributes?.notes && (
-              <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <span className="font-medium text-amber-800">ملاحظات:</span>
-                <p className="mt-1 text-amber-700">{selectedNode.attributes.notes}</p>
               </div>
-            )}
-
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => handleEdit(selectedNode.attributes?.id)}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-              >
-                تعديل
-              </button>
-              <button
-                onClick={() => handleDelete(selectedNode.attributes?.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-              >
-                حذف
-              </button>
             </div>
           </div>
         )}
@@ -559,7 +647,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         {/* Legend */}
         <div className="border-t border-gray-200 p-4 sm:p-6 bg-gray-50">
           <h4 className="font-semibold text-gray-800 mb-3">دليل الألوان والرموز:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-purple-500"></div>
               <span>الجيل الأول</span>
@@ -589,7 +677,11 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <span>عدد الأطفال</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600">انقر على العقدة لعرض التفاصيل</span>
+              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">ℹ</div>
+              <span>زر التفاصيل</span>
+            </div>
+            <div className="flex items-center gap-2 md:col-span-2">
+              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل لعرض المعلومات</span>
             </div>
           </div>
         </div>
