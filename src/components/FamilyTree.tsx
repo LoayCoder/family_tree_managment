@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2, X, Calendar, Phone, FileText, Edit3, Trash2 } from 'lucide-react';
+import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2, X, Calendar, Phone, FileText, Edit3, Trash2, Maximize, Minimize } from 'lucide-react';
 import Tree from 'react-d3-tree';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
 import { familyService, DeletionConstraintError } from '../services/supabase';
@@ -21,6 +21,7 @@ interface TreeNode {
     nationalId?: string;
     level: number;
     isAlive: boolean;
+    nodeColor?: string;
     phone?: string;
     notes?: string;
   };
@@ -37,6 +38,8 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadFamilyTree();
@@ -61,6 +64,16 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
       });
     }
   }, [treeOrientation]);
+
+  // Handle fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const loadFamilyTree = async () => {
     setLoading(true);
@@ -101,8 +114,21 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     const rootMembers = flatMembers.filter(member => !member.parent_id);
 
     // Build tree recursively
-    const buildNode = (member: FamilyMemberWithLevel): TreeNode => {
+    const buildNode = (member: FamilyMemberWithLevel, parentColor?: string): TreeNode => {
       const children = childrenMap.get(member.id) || [];
+      const hasChildren = children.length > 0;
+      const level = member.level;
+      
+      // Get node color based on generation level and whether it has children
+      const getNodeColor = (level: number, hasChildren: boolean, isAlive: boolean) => {
+        if (!isAlive) return '#6b7280'; // Gray for deceased
+        if (!hasChildren) return '#6b7280'; // Gray for leaf nodes (no children)
+        
+        const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
+        return colors[level % colors.length];
+      };
+      
+      const nodeColor = getNodeColor(level, hasChildren, member.is_alive !== false);
       
       return {
         name: member.name,
@@ -111,13 +137,14 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           birthDate: member.birth_date || undefined,
           deathDate: member.date_of_death || undefined,
           gender: member.gender || undefined,
-          nationalId: member.phone || undefined, // Using phone as additional info
+          nationalId: member.phone || undefined,
           level: member.level,
           isAlive: member.is_alive !== false,
+          nodeColor: nodeColor,
           phone: member.phone || undefined,
           notes: member.notes || undefined
         },
-        children: children.length > 0 ? children.map(buildNode) : undefined
+        children: children.length > 0 ? children.map(child => buildNode(child, nodeColor)) : undefined
       };
     };
 
@@ -126,6 +153,21 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
 
   const handleEdit = (memberId: string) => {
     alert(`تعديل العضو: ${memberId}`);
+  };
+
+  const toggleFullScreen = async () => {
+    const treeContainer = document.getElementById('tree-container');
+    if (!treeContainer) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await treeContainer.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error('Error toggling fullscreen:', error);
+    }
   };
 
   const showMessage = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -171,19 +213,13 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
   };
 
   // Custom node rendering
-  const renderCustomNode = ({ nodeDatum, toggleNode }: any) => {
+  const renderCustomNode = ({ nodeDatum, toggleNode, hierarchyPointNode }: any) => {
     const isAlive = nodeDatum.attributes?.isAlive !== false;
     const level = nodeDatum.attributes?.level || 0;
     const hasChildren = nodeDatum.children && nodeDatum.children.length > 0;
     const childrenCount = nodeDatum.children ? nodeDatum.children.length : 0;
-    
-    // Color based on generation level
-    const getNodeColor = (level: number) => {
-      const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
-      return colors[level % colors.length];
-    };
-
-    const nodeColor = getNodeColor(level);
+    const nodeColor = nodeDatum.attributes?.nodeColor || '#6b7280';
+    const isExpanded = expandedNodes.has(nodeDatum.attributes?.id);
     
     // Truncate name if too long
     const displayName = nodeDatum.name.length > 12 ? nodeDatum.name.substring(0, 12) + '...' : nodeDatum.name;
@@ -193,15 +229,31 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     const firstLine = nameWords[0] || '';
     const secondLine = nameWords.slice(1).join(' ');
     
+    const handleNodeToggle = () => {
+      const nodeId = nodeDatum.attributes?.id;
+      if (nodeId) {
+        const newExpanded = new Set(expandedNodes);
+        if (newExpanded.has(nodeId)) {
+          newExpanded.delete(nodeId);
+        } else {
+          newExpanded.add(nodeId);
+          // Zoom in when expanding
+          setZoom(prev => Math.min(prev * 1.3, 3));
+        }
+        setExpandedNodes(newExpanded);
+      }
+      toggleNode();
+    };
+    
     return (
       <g>
         {/* Node circle */}
         <circle
           r={30}
-          fill={isAlive ? nodeColor : '#6b7280'}
+          fill={nodeColor}
           stroke={isAlive ? '#ffffff' : '#9ca3af'}
           strokeWidth={3}
-          onClick={toggleNode}
+          onClick={handleNodeToggle}
           style={{ cursor: 'pointer' }}
           opacity={isAlive ? 1 : 0.7}
         />
@@ -224,7 +276,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           y={secondLine ? -2 : 3}
           textAnchor="middle"
           fontSize="10"
-          fontWeight="bold"
+          fontWeight={hasChildren ? "bold" : "bold"}
           style={{ pointerEvents: 'none' }}
         >
           {firstLine}
@@ -239,7 +291,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
             y={8}
             textAnchor="middle"
             fontSize="9"
-            fontWeight="bold"
+            fontWeight={hasChildren ? "bold" : "bold"}
             style={{ pointerEvents: 'none' }}
           >
             {secondLine}
@@ -318,6 +370,24 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         </g>
       </g>
     );
+  };
+
+  // Custom path function to match line color with parent node
+  const customPathFunc = (linkDatum: any, orientation: string) => {
+    const { source, target } = linkDatum;
+    const parentColor = source.data.attributes?.nodeColor || '#10b981';
+    
+    // Set the stroke color for this specific link
+    if (linkDatum.__linkElement) {
+      linkDatum.__linkElement.style.stroke = parentColor;
+    }
+    
+    // Return the default diagonal path
+    if (orientation === 'horizontal') {
+      return `M${source.y},${source.x}C${(source.y + target.y) / 2},${source.x} ${(source.y + target.y) / 2},${target.x} ${target.y},${target.x}`;
+    } else {
+      return `M${source.x},${source.y}C${source.x},${(source.y + target.y) / 2} ${target.x},${(source.y + target.y) / 2} ${target.x},${target.y}`;
+    }
   };
 
   // Handle node click for details
@@ -439,6 +509,13 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
             >
               <RotateCcw className="w-4 h-4" />
             </button>
+            <button
+              onClick={toggleFullScreen}
+              className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              title={isFullScreen ? "إغلاق الشاشة الكاملة" : "عرض بالشاشة الكاملة"}
+            >
+              {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
           </ResponsiveFlex>
         </div>
 
@@ -456,8 +533,13 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         ) : (
           <div className="relative">
             <div 
+              id="tree-container"
               className="tree-container w-full bg-gradient-to-br from-emerald-50 to-blue-50" 
-              style={{ height: '600px', direction: 'ltr' }}
+              style={{ 
+                height: isFullScreen ? '100vh' : '600px', 
+                direction: 'ltr',
+                width: isFullScreen ? '100vw' : '100%'
+              }}
             >
               <Tree
                 data={treeData}
@@ -465,16 +547,17 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 translate={translate}
                 zoom={zoom}
                 scaleExtent={{ min: 0.3, max: 3 }}
-                separation={{ siblings: 1.2, nonSiblings: 1.5 }}
+                separation={{ siblings: 0.8, nonSiblings: 1.0 }}
                 nodeSize={{ x: 150, y: 120 }}
                 renderCustomNodeElement={renderCustomNode}
                 onNodeClick={handleNodeClick}
-                pathFunc="diagonal"
+                pathFunc={customPathFunc}
                 transitionDuration={500}
                 enableLegacyTransitions={true}
                 collapsible={true}
-                initialDepth={2}
+                initialDepth={0}
                 depthFactor={120}
+                shouldCollapseNeighborNodes={false}
                 styles={{
                   links: {
                     stroke: '#10b981',
@@ -518,15 +601,24 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 التكبير: {Math.round(zoom * 100)}%
               </span>
             </div>
+
+            {/* Fullscreen indicator */}
+            {isFullScreen && (
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md">
+                <span className="text-sm font-medium text-gray-700">
+                  وضع الشاشة الكاملة
+                </span>
+              </div>
+            )}
           </div>
         )}
 
         {/* Selected Node Details */}
         {selectedNode && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedNode(null)}>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setSelectedNode(null)}>
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-emerald-500 to-blue-600 p-6 text-white">
+              <div className="bg-gradient-to-r from-emerald-500 to-blue-600 p-6 text-white relative">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-2xl font-bold mb-2">{selectedNode.name}</h3>
@@ -554,7 +646,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                   </div>
                   <button
                     onClick={() => setSelectedNode(null)}
-                    className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
+                    className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors absolute top-4 right-4"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -665,6 +757,10 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <span>الجيل الرابع</span>
             </div>
             <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-gray-500"></div>
+              <span>عقدة نهائية (بدون أطفال)</span>
+            </div>
+            <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
               <span>على قيد الحياة</span>
             </div>
@@ -680,8 +776,12 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">ℹ</div>
               <span>زر التفاصيل</span>
             </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-600 text-xs font-bold">⛶</div>
+              <span>زر الشاشة الكاملة</span>
+            </div>
             <div className="flex items-center gap-2 md:col-span-2">
-              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل لعرض المعلومات</span>
+              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل لعرض المعلومات. الخطوط تأخذ لون العقدة الأب.</span>
             </div>
           </div>
         </div>

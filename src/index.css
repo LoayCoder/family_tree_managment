@@ -401,6 +401,11 @@ img {
   position: relative;
 }
 
+.tree-container:fullscreen {
+  background: linear-gradient(135deg, #ecfdf5, #dbeafe);
+  padding: 2rem;
+}
+
 .tree-container .rd3t-tree-container {
   width: 100% !important;
   height: 100% !important;
@@ -426,8 +431,8 @@ img {
 }
 
 .rd3t-link:hover {
-  stroke: #059669;
   stroke-width: 3px;
+  filter: brightness(1.1);
 }
 
 /* Tree node hover effects */
@@ -439,6 +444,7 @@ img {
 .rd3t-node:hover circle {
   stroke-width: 4px !important;
   filter: brightness(1.1);
+  transform: scale(1.05);
 }
 
 /* Improved tree node text styling */
@@ -447,6 +453,11 @@ img {
   direction: rtl;
   text-anchor: middle;
   font-weight: 600 !important;
+}
+
+/* Leaf node styling */
+.rd3t-node[data-has-children="false"] text {
+  font-weight: bold !important;
 }
 
 /* Tree node details button hover effect */
