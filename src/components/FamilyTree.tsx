@@ -39,7 +39,6 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
   const [zoom, setZoom] = useState(1);
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadFamilyTree();
@@ -219,7 +218,6 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     const hasChildren = nodeDatum.children && nodeDatum.children.length > 0;
     const childrenCount = nodeDatum.children ? nodeDatum.children.length : 0;
     const nodeColor = nodeDatum.attributes?.nodeColor || '#6b7280';
-    const isExpanded = expandedNodes.has(nodeDatum.attributes?.id);
     
     // Truncate name if too long
     const displayName = nodeDatum.name.length > 12 ? nodeDatum.name.substring(0, 12) + '...' : nodeDatum.name;
@@ -229,22 +227,6 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     const firstLine = nameWords[0] || '';
     const secondLine = nameWords.slice(1).join(' ');
     
-    const handleNodeToggle = () => {
-      const nodeId = nodeDatum.attributes?.id;
-      if (nodeId) {
-        const newExpanded = new Set(expandedNodes);
-        if (newExpanded.has(nodeId)) {
-          newExpanded.delete(nodeId);
-        } else {
-          newExpanded.add(nodeId);
-          // Zoom in when expanding
-          setZoom(prev => Math.min(prev * 1.3, 3));
-        }
-        setExpandedNodes(newExpanded);
-      }
-      toggleNode();
-    };
-    
     return (
       <g>
         {/* Node circle */}
@@ -253,7 +235,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           fill={nodeColor}
           stroke={isAlive ? '#ffffff' : '#9ca3af'}
           strokeWidth={3}
-          onClick={handleNodeToggle}
+          onClick={toggleNode}
           style={{ cursor: 'pointer' }}
           opacity={isAlive ? 1 : 0.7}
         />
@@ -370,6 +352,15 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         </g>
       </g>
     );
+  };
+
+  // Handle tree node toggle for zoom effect
+  const handleTreeToggle = (nodeDatum: any) => {
+    // Check if node is being expanded (has children and they will be visible)
+    if (nodeDatum.children && nodeDatum.children.length > 0) {
+      // Zoom in when expanding
+      setZoom(prev => Math.min(prev * 1.3, 3));
+    }
   };
 
   // Custom path function to match line color with parent node
@@ -551,6 +542,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 nodeSize={{ x: 150, y: 120 }}
                 renderCustomNodeElement={renderCustomNode}
                 onNodeClick={handleNodeClick}
+                onNodeToggle={handleTreeToggle}
                 pathFunc={customPathFunc}
                 transitionDuration={500}
                 enableLegacyTransitions={true}
