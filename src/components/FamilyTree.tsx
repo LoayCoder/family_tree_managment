@@ -356,8 +356,8 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
 
   // Handle tree node toggle for zoom effect
   const handleTreeToggle = (nodeDatum: any) => {
-    // Check if node is being expanded (has children and they will be visible)
-    if (nodeDatum.children && nodeDatum.children.length > 0) {
+    // Check if node is being expanded using the internal react-d3-tree state
+    if (nodeDatum.children && nodeDatum.children.length > 0 && !nodeDatum.__rd3t.collapsed) {
       // Zoom in when expanding
       setZoom(prev => Math.min(prev * 1.3, 3));
     }
@@ -545,7 +545,6 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 onNodeToggle={handleTreeToggle}
                 pathFunc={customPathFunc}
                 transitionDuration={500}
-                enableLegacyTransitions={true}
                 collapsible={true}
                 initialDepth={0}
                 depthFactor={120}
