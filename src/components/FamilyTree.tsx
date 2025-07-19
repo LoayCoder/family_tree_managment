@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2, X, Calendar, Phone, FileText, Edit3, Trash2, Maximize, Minimize } from 'lucide-react';
+import { TreePine, Users, Search, Filter, ZoomIn, ZoomOut, RotateCcw, Maximize2, X, Calendar, Phone, FileText, Edit3, Trash2, Maximize, Minimize, Heart } from 'lucide-react';
 import Tree from 'react-d3-tree';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
 import { familyService, DeletionConstraintError } from '../services/supabase';
+import { arabicFamilyService, PersonWithDetails } from '../services/arabicFamilyService';
 import ResponsiveContainer from './responsive/ResponsiveContainer';
 import ResponsiveFlex from './responsive/ResponsiveFlex';
 import ResponsiveText from './responsive/ResponsiveText';
+import PersonForm from './DataEntry/PersonForm';
 
 interface FamilyTreeProps {
   refreshTrigger: number;
@@ -15,6 +17,7 @@ interface TreeNode {
   name: string;
   attributes?: {
     id: string;
+    fullName?: string;
     birthDate?: string;
     deathDate?: string;
     gender?: string;
@@ -39,6 +42,8 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
   const [zoom, setZoom] = useState(1);
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<number | null>(null);
+  const [editingPersonData, setEditingPersonData] = useState<PersonWithDetails | null>(null);
 
   useEffect(() => {
     loadFamilyTree();
@@ -121,7 +126,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
       // Get node color based on generation level and whether it has children
       const getNodeColor = (level: number, hasChildren: boolean, isAlive: boolean) => {
         if (!isAlive) return '#6b7280'; // Gray for deceased
-        if (!hasChildren) return '#6b7280'; // Gray for leaf nodes (no children)
+        if (!hasChildren) return '#3b82f6'; // Blue for leaf nodes (no children) that are alive
         
         const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
         return colors[level % colors.length];
@@ -130,9 +135,10 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
       const nodeColor = getNodeColor(level, hasChildren, member.is_alive !== false);
       
       return {
-        name: member.name,
+        name: member.name.split(' ')[0], // Only display first name
         attributes: {
           id: member.id,
+          fullName: member.name, // Store full name for details
           birthDate: member.birth_date || undefined,
           deathDate: member.date_of_death || undefined,
           gender: member.gender || undefined,
@@ -150,8 +156,43 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     return rootMembers.map(buildNode);
   };
 
-  const handleEdit = (memberId: string) => {
-    alert(`تعديل العضو: ${memberId}`);
+  const handleEdit = async (memberId: string) => {
+    try {
+      // Find the member in the current members list
+      const member = members.find(m => m.id === memberId);
+      if (!member) {
+        showMessage('لم يتم العثور على بيانات العضو', 'error');
+        return;
+      }
+
+      // Get detailed person data from Arabic family service
+      const personsData = await arabicFamilyService.getPersonsWithDetails();
+      const personDetails = personsData.find(p => p.id === parseInt(memberId));
+      
+      if (!personDetails) {
+        showMessage('لم يتم العثور على تفاصيل العضو', 'error');
+        return;
+      }
+
+      setEditingPersonId(parseInt(memberId));
+      setEditingPersonData(personDetails);
+      setSelectedNode(null); // Close details modal
+    } catch (error) {
+      console.error('Error loading person for edit:', error);
+      showMessage('حدث خطأ أثناء تحميل بيانات العضو', 'error');
+    }
+  };
+
+  const handleEditComplete = () => {
+    setEditingPersonId(null);
+    setEditingPersonData(null);
+    loadFamilyTree(); // Refresh the tree data
+    showMessage('تم تحديث بيانات العضو بنجاح!', 'success');
+  };
+
+  const handleEditCancel = () => {
+    setEditingPersonId(null);
+    setEditingPersonData(null);
   };
 
   const toggleFullScreen = async () => {
@@ -220,7 +261,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
     const nodeColor = nodeDatum.attributes?.nodeColor || '#6b7280';
     
     // Truncate name if too long
-    const displayName = nodeDatum.name.length > 12 ? nodeDatum.name.substring(0, 12) + '...' : nodeDatum.name;
+    const displayName = nodeDatum.name.length > 10 ? nodeDatum.name.substring(0, 10) + '...' : nodeDatum.name;
     
     // Split name into multiple lines if needed
     const nameWords = displayName.split(' ');
@@ -240,15 +281,17 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           opacity={isAlive ? 1 : 0.7}
         />
         
-        {/* Status indicator */}
-        <circle
-          r={5}
-          cx={20}
-          cy={-20}
-          fill={isAlive ? '#10b981' : '#ef4444'}
-          stroke="#ffffff"
-          strokeWidth={2}
-        />
+        {/* Status indicator - only for living individuals */}
+        {isAlive && (
+          <circle
+            r={5}
+            cx={20}
+            cy={-20}
+            fill="#10b981"
+            stroke="#ffffff"
+            strokeWidth={2}
+          />
+        )}
         
         {/* Name text - First line */}
         <text
@@ -612,7 +655,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <div className="bg-gradient-to-r from-emerald-500 to-blue-600 p-6 text-white relative">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">{selectedNode.name}</h3>
+                    <h3 className="text-2xl font-bold mb-2">{selectedNode.attributes?.fullName || selectedNode.name}</h3>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
                         الجيل {(selectedNode.attributes?.level || 0) + 1}
@@ -730,7 +773,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
         {/* Legend */}
         <div className="border-t border-gray-200 p-4 sm:p-6 bg-gray-50">
           <h4 className="font-semibold text-gray-800 mb-3">دليل الألوان والرموز:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-purple-500"></div>
               <span>الجيل الأول</span>
@@ -749,15 +792,15 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-gray-500"></div>
-              <span>عقدة نهائية (بدون أطفال)</span>
+              <span>متوفى</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+              <span>على قيد الحياة (بدون أطفال)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>على قيد الحياة</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>متوفى</span>
+              <span>مؤشر الحياة</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center text-white text-xs font-bold">3</div>
@@ -768,15 +811,20 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <span>زر التفاصيل</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-600 text-xs font-bold">⛶</div>
-              <span>زر الشاشة الكاملة</span>
-            </div>
-            <div className="flex items-center gap-2 md:col-span-2">
-              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل لعرض المعلومات. الخطوط تأخذ لون العقدة الأب.</span>
+              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل (ℹ) لعرض المعلومات والتعديل.</span>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Edit Person Modal */}
+      {editingPersonId && editingPersonData && (
+        <PersonForm
+          onSuccess={handleEditComplete}
+          onCancel={handleEditCancel}
+          editData={editingPersonData}
+        />
+      )}
     </ResponsiveContainer>
   );
 }
