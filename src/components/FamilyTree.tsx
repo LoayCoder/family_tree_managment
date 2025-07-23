@@ -370,25 +370,28 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
             handleNodeClick(nodeDatum);
           }}
           style={{ cursor: 'pointer' }}
+          className="info-button-group"
         >
           <circle
-            r={6}
+            r={8}
             cx={-20}
             cy={-20}
             fill="#3b82f6"
             stroke="#ffffff"
-            strokeWidth={2}
-            opacity={0.9}
+            strokeWidth={3}
+            opacity={1}
+            className="info-button-circle"
           />
           <text
             fill="#ffffff"
             strokeWidth="0"
             x={-20}
-            y={-17}
+            y={-16}
             textAnchor="middle"
-            fontSize="8"
+            fontSize="10"
             fontWeight="bold"
             style={{ pointerEvents: 'none' }}
+            className="info-button-text"
           >
             ℹ
           </text>
@@ -627,6 +630,33 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                   },
                 }}
               />
+              
+              {/* Enhanced CSS for info button hover effects */}
+              <style jsx>{`
+                .info-button-group:hover .info-button-circle {
+                  transform: scale(1.15);
+                  filter: brightness(1.1);
+                  stroke-width: 4;
+                }
+                
+                .info-button-group:hover .info-button-text {
+                  font-size: 11px;
+                  font-weight: 900;
+                }
+                
+                .info-button-group {
+                  transition: all 0.2s ease;
+                }
+                
+                .info-button-circle {
+                  transition: all 0.2s ease;
+                  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+                }
+                
+                .info-button-text {
+                  transition: all 0.2s ease;
+                }
+              `}</style>
             </div>
 
             {/* Zoom indicator */}
