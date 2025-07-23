@@ -8,6 +8,8 @@ import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import NewsPage from './components/NewsPage';
+import NotablesPage from './components/NotablesPage';
+import NotableDetailCard from './components/NotableDetailCard';
 import { supabase } from './services/arabicFamilyService';
 import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
@@ -25,11 +27,12 @@ interface User {
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'notable-detail' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(true);
+  const [selectedNotableId, setSelectedNotableId] = useState<number | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -214,6 +217,32 @@ function App() {
 
   if (activeView === 'news') {
     return <NewsPage onBack={() => setActiveView('landing')} user={user} />;
+  }
+
+  if (activeView === 'notables') {
+    return (
+      <NotablesPage 
+        onBack={() => setActiveView('landing')} 
+        onViewDetails={(notableId) => {
+          setSelectedNotableId(notableId);
+          setActiveView('notable-detail');
+        }}
+        user={user}
+      />
+    );
+  }
+
+  if (activeView === 'notable-detail' && selectedNotableId) {
+    return (
+      <NotableDetailCard 
+        notableId={selectedNotableId}
+        onBack={() => {
+          setSelectedNotableId(null);
+          setActiveView('notables');
+        }}
+        user={user}
+      />
+    );
   }
 
   return (
@@ -426,7 +455,6 @@ function App() {
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
           {activeView === 'news' && <NewsPage onBack={() => setActiveView('landing')} user={user} />}
-          {activeView === 'notables' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة الشخصيات البارزة - قيد التطوير</h2></div>}
           {activeView === 'events' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة المناسبات والأحداث - قيد التطوير</h2></div>}
           {activeView === 'gallery' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">معرض الصور والفيديوهات - قيد التطوير</h2></div>}
           
