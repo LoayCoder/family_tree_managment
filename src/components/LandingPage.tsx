@@ -128,13 +128,22 @@ export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPag
                   </button>
 
                   {user ? (
-                    <button
-                      onClick={() => onNavigate && onNavigate('news')}
-                      className="flex items-center gap-3 px-8 py-4 border-2 border-blue-500 text-blue-700 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all"
-                    >
-                      <FileText className="w-6 h-6" />
-                      تصفح الأخبار العائلية
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button
+                        onClick={() => onNavigate && onNavigate('news')}
+                        className="flex items-center gap-3 px-6 py-3 border-2 border-blue-500 text-blue-700 rounded-2xl font-bold text-base hover:bg-blue-50 transition-all"
+                      >
+                        <FileText className="w-5 h-5" />
+                        تصفح الأخبار العائلية
+                      </button>
+                      <button
+                        onClick={() => onNavigate && onNavigate('notables')}
+                        className="flex items-center gap-3 px-6 py-3 border-2 border-purple-500 text-purple-700 rounded-2xl font-bold text-base hover:bg-purple-50 transition-all"
+                      >
+                        <Crown className="w-5 h-5" />
+                        تصفح الشخصيات البارزة
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => onShowAuth('login')}
