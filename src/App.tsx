@@ -8,7 +8,6 @@ import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import NewsPage from './components/NewsPage';
-import NotablesPage from './components/NotablesPage';
 import { supabase } from './services/arabicFamilyService';
 import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
@@ -427,7 +426,7 @@ function App() {
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
           {activeView === 'news' && <NewsPage onBack={() => setActiveView('landing')} user={user} />}
-          {activeView === 'notables' && <NotablesPage onBack={() => setActiveView('landing')} user={user} />}
+          {activeView === 'notables' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة الشخصيات البارزة - قيد التطوير</h2></div>}
           {activeView === 'events' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة المناسبات والأحداث - قيد التطوير</h2></div>}
           {activeView === 'gallery' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">معرض الصور والفيديوهات - قيد التطوير</h2></div>}
           
