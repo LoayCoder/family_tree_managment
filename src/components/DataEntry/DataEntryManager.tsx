@@ -7,12 +7,13 @@ import BranchForm from './BranchForm';
 import EventForm from './EventForm';
 import AudioFileForm from './AudioFileForm';
 import TextDocumentForm from './TextDocumentForm';
+import NewsPostForm from './NewsPostForm';
 import ExportImportManager from './ExportImportManager';
 import ExcelImportExport from './ExcelImportExport';
 import PersonDetailsView from './PersonDetailsView';
 import { arabicFamilyService } from '../../services/arabicFamilyService';
 
-type FormType = 'person' | 'woman' | 'location' | 'branch' | 'event' | 'audio' | 'text' | 'export-import' | 'excel' | 'person-details';
+type FormType = 'person' | 'woman' | 'location' | 'branch' | 'event' | 'audio' | 'text' | 'news' | 'export-import' | 'excel' | 'person-details';
 
 interface FormOption {
   id: FormType;
@@ -29,6 +30,14 @@ export default function DataEntryManager() {
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
 
   const formOptions: FormOption[] = [
+    {
+      id: 'news',
+      title: 'إضافة خبر/مقالة',
+      description: 'إنشاء مقال إخباري أو خبر للعائلة',
+      icon: <FileText className="w-6 h-6" />,
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600'
+    },
     {
       id: 'person',
       title: 'إضافة شخص (رجل)',
@@ -135,6 +144,8 @@ export default function DataEntryManager() {
         return <AudioFileForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
       case 'text':
         return <TextDocumentForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
+      case 'news':
+        return <NewsPostForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
       case 'export-import':
         return <ExportImportManager onCancel={() => setActiveForm(null)} />;
       case 'excel':

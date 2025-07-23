@@ -7,6 +7,7 @@ import FamilyDirectory from './components/FamilyDirectory';
 import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
+import NewsPage from './components/NewsPage';
 import { supabase } from './services/arabicFamilyService';
 import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
@@ -25,6 +26,7 @@ interface User {
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -211,6 +213,10 @@ function App() {
     return <AdminPanel onBack={() => setActiveView('arabic')} currentUserId={user?.id || ''} />;
   }
 
+  if (activeView === 'news') {
+    return <NewsPage onBack={() => setActiveView('landing')} user={user} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -350,6 +356,18 @@ function App() {
             </button>
             
             <button
+              onClick={() => setActiveView('news')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
+                activeView === 'news'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>الأخبار</span>
+            </button>
+            
+            <button
               onClick={() => setActiveView('directory')}
               className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
                 activeView === 'directory'
@@ -408,6 +426,7 @@ function App() {
           {activeView === 'data-entry' && canAccess('editor') && <DataEntryManager />}
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
+          {activeView === 'news' && <NewsPage onBack={() => setActiveView('landing')} user={user} />}
           {activeView === 'notables' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة الشخصيات البارزة - قيد التطوير</h2></div>}
           {activeView === 'events' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة المناسبات والأحداث - قيد التطوير</h2></div>}
           {activeView === 'gallery' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">معرض الصور والفيديوهات - قيد التطوير</h2></div>}

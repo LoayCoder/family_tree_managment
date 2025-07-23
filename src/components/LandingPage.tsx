@@ -3,9 +3,11 @@ import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Hear
 
 interface LandingPageProps {
   onShowAuth: (mode: 'login' | 'signup') => void;
+  onNavigate?: (view: string) => void;
+  user?: any;
 }
 
-export default function LandingPage({ onShowAuth }: LandingPageProps) {
+export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -41,6 +43,26 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                   انضم لنا
                 </button>
               </div>
+              
+              {/* Navigation for authenticated users */}
+              {user && onNavigate && (
+                <div className="hidden sm:flex items-center gap-3">
+                  <button
+                    onClick={() => onNavigate('news')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
+                  >
+                    <FileText className="w-5 h-5" />
+                    الأخبار
+                  </button>
+                  <button
+                    onClick={() => onNavigate('arabic')}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-medium"
+                  >
+                    <TreePine className="w-5 h-5" />
+                    النظام
+                  </button>
+                </div>
+              )}
               
               {/* Mobile buttons */}
               <div className="sm:hidden flex items-center gap-2">
@@ -105,13 +127,23 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                     <ArrowRight className="w-6 h-6" />
                   </button>
 
-                  <button
-                    onClick={() => onShowAuth('login')}
-                    className="flex items-center gap-3 px-8 py-4 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all"
-                  >
-                    <LogIn className="w-6 h-6" />
-                    عضو في القبيلة؟ ادخل هنا
-                  </button>
+                  {user ? (
+                    <button
+                      onClick={() => onNavigate && onNavigate('news')}
+                      className="flex items-center gap-3 px-8 py-4 border-2 border-blue-500 text-blue-700 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all"
+                    >
+                      <FileText className="w-6 h-6" />
+                      تصفح الأخبار العائلية
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onShowAuth('login')}
+                      className="flex items-center gap-3 px-8 py-4 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all"
+                    >
+                      <LogIn className="w-6 h-6" />
+                      عضو في القبيلة؟ ادخل هنا
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -435,14 +467,34 @@ export default function LandingPage({ onShowAuth }: LandingPageProps) {
                 انضم إلى أسرتك الشريفة الكريمة، واحتفِ بنسبك الطاهر وتراثك العريق المتصل برسول الله صلى الله عليه وسلم
               </p>
               
-              <button
-                onClick={() => onShowAuth('signup')}
-                className="inline-flex items-center gap-4 px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
-              >
-                <Heart className="w-7 h-7" />
-                سجل انتماءك للأشراف بني عمير
-                <ArrowRight className="w-7 h-7" />
-              </button>
+              {user ? (
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                  <button
+                    onClick={() => onNavigate && onNavigate('news')}
+                    className="inline-flex items-center gap-4 px-10 py-5 bg-white text-blue-600 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
+                  >
+                    <FileText className="w-7 h-7" />
+                    تصفح أخبار العائلة
+                    <ArrowRight className="w-7 h-7" />
+                  </button>
+                  <button
+                    onClick={() => onNavigate && onNavigate('arabic')}
+                    className="inline-flex items-center gap-4 px-10 py-5 bg-white/20 backdrop-blur-sm text-white border-2 border-white rounded-2xl font-bold text-xl shadow-2xl hover:bg-white/30 transform hover:scale-105 transition-all"
+                  >
+                    <TreePine className="w-7 h-7" />
+                    دخول النظام الرئيسي
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => onShowAuth('signup')}
+                  className="inline-flex items-center gap-4 px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
+                >
+                  <Heart className="w-7 h-7" />
+                  سجل انتماءك للأشراف بني عمير
+                  <ArrowRight className="w-7 h-7" />
+                </button>
+              )}
             </div>
           </div>
         </div>
