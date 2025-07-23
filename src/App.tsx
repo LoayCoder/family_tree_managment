@@ -25,7 +25,6 @@ interface User {
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'admin'>('landing');
   const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
