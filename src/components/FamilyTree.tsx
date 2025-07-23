@@ -838,10 +838,10 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">ℹ</div>
-              <span>زر التفاصيل</span>
+              <span>زر التفاصيل (انقر لعرض المعلومات الكاملة والتعديل)</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على زر التفاصيل (ℹ) لعرض المعلومات والتعديل.</span>
+              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على الزر الأزرق (ℹ) لعرض التفاصيل الكاملة وإمكانية التعديل.</span>
             </div>
           </div>
         </div>
