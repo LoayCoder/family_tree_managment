@@ -1,5 +1,5 @@
 import React from 'react';
-import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Heart, Mountain } from 'lucide-react';
+import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Heart, Mountain, FileText } from 'lucide-react';
 
 interface LandingPageProps {
   onShowAuth: (mode: 'login' | 'signup') => void;
