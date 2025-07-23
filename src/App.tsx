@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Crown, Calendar, Image } from 'lucide-react';
+import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Crown, Calendar, Image, FileText } from 'lucide-react';
 import ArabicFamilyTreeDemo from './components/ArabicFamilyTreeDemo';
 import DataEntryManager from './components/DataEntry/DataEntryManager';
 import FamilyTree from './components/FamilyTree';
