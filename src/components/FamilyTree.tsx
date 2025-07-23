@@ -416,10 +416,43 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
 
   // Handle tree node toggle for zoom effect
   const handleTreeToggle = (nodeDatum: any) => {
-    // Check if node is being expanded using the internal react-d3-tree state
-    if (nodeDatum.children && nodeDatum.children.length > 0 && !nodeDatum.__rd3t.collapsed) {
-      // Zoom in when expanding
-      setZoom(prev => Math.min(prev * 1.3, 3));
+    // Get the tree container dimensions
+    const container = document.querySelector('.tree-container');
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    
+    // Check if node is being expanded
+    const isExpanding = nodeDatum.children && nodeDatum.children.length > 0 && !nodeDatum.__rd3t.collapsed;
+    
+    if (isExpanding) {
+      // Calculate the node's current position in the tree
+      const nodeX = nodeDatum.x || 0;
+      const nodeY = nodeDatum.y || 0;
+      
+      // Calculate new translation to center the expanded node
+      let newTranslateX, newTranslateY;
+      
+      if (treeOrientation === 'vertical') {
+        // For vertical orientation, center horizontally and position vertically
+        newTranslateX = containerWidth / 2 - nodeX * zoom;
+        newTranslateY = containerHeight * 0.3 - nodeY * zoom; // Position at 30% from top
+      } else {
+        // For horizontal orientation, center vertically and position horizontally
+        newTranslateX = containerWidth * 0.3 - nodeX * zoom; // Position at 30% from left
+        newTranslateY = containerHeight / 2 - nodeY * zoom;
+      }
+      
+      // Apply the new translation with smooth animation
+      setTranslate({
+        x: newTranslateX,
+        y: newTranslateY
+      });
+      
+      // Optional: Slight zoom in when expanding
+      setZoom(prev => Math.min(prev * 1.2, 2.5));
     }
   };
 
@@ -604,7 +637,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
                 onNodeClick={handleNodeClick}
                 onNodeToggle={handleTreeToggle}
                 pathFunc={customPathFunc}
-                transitionDuration={500}
+                transitionDuration={800}
                 collapsible={true}
                 initialDepth={0}
                 depthFactor={120}
