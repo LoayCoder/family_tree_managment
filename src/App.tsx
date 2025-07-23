@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle } from 'lucide-react';
+import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Crown, Calendar, Image } from 'lucide-react';
 import ArabicFamilyTreeDemo from './components/ArabicFamilyTreeDemo';
 import DataEntryManager from './components/DataEntry/DataEntryManager';
 import FamilyTree from './components/FamilyTree';
@@ -24,7 +24,7 @@ interface User {
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'events' | 'gallery' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -198,7 +198,13 @@ function App() {
   }
 
   if (activeView === 'landing') {
-    return <LandingPage onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }} />;
+    return (
+      <LandingPage 
+        onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }}
+        onNavigate={(view) => setActiveView(view)}
+        user={user}
+      />
+    );
   }
 
   if (activeView === 'admin') {
@@ -302,7 +308,7 @@ function App() {
 
         {/* View Toggle */}
         <div className="flex justify-center mb-4 sm:mb-6 overflow-x-auto pb-2">
-          <div className="bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-lg border border-gray-200 flex flex-nowrap">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-lg border border-gray-200 flex flex-nowrap gap-1">
             <button
               onClick={() => setActiveView('arabic')}
               className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
@@ -354,6 +360,45 @@ function App() {
               <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>الدليل</span>
             </button>
+            
+            <button
+              onClick={() => setActiveView('notables')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
+                activeView === 'notables'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hide-on-mobile">الشخصيات</span>
+              <span className="show-on-mobile">الشخصيات</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveView('events')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
+                activeView === 'events'
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hide-on-mobile">المناسبات</span>
+              <span className="show-on-mobile">المناسبات</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveView('gallery')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
+                activeView === 'gallery'
+                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Image className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hide-on-mobile">المعرض</span>
+              <span className="show-on-mobile">المعرض</span>
+            </button>
           </div>
         </div>
 
@@ -363,6 +408,9 @@ function App() {
           {activeView === 'data-entry' && canAccess('editor') && <DataEntryManager />}
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
+          {activeView === 'notables' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة الشخصيات البارزة - قيد التطوير</h2></div>}
+          {activeView === 'events' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">صفحة المناسبات والأحداث - قيد التطوير</h2></div>}
+          {activeView === 'gallery' && <div className="text-center py-12"><h2 className="text-2xl font-bold text-gray-800">معرض الصور والفيديوهات - قيد التطوير</h2></div>}
           
           {activeView === 'data-entry' && !canAccess('editor') && (
             <div className="text-center py-8 sm:py-12">
