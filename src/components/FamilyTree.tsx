@@ -281,16 +281,30 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
           opacity={isAlive ? 1 : 0.7}
         />
         
-        {/* Status indicator - only for living individuals */}
+        {/* Heart indicator - only for living individuals */}
         {isAlive && (
-          <circle
-            r={5}
-            cx={20}
-            cy={-20}
-            fill="#10b981"
-            stroke="#ffffff"
-            strokeWidth={2}
-          />
+          <g transform="translate(20, -20)">
+            <circle
+              r={8}
+              fill="#ffffff"
+              stroke="#ef4444"
+              strokeWidth={1.5}
+              opacity={0.9}
+            />
+            <foreignObject x={-6} y={-6} width={12} height={12}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                width: '12px',
+                height: '12px',
+                color: '#ef4444',
+                fontSize: '8px'
+              }}>
+                ❤️
+              </div>
+            </foreignObject>
+          </g>
         )}
         
         {/* Name text - First line */}
@@ -825,12 +839,12 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <span>متوفى</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+              <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
               <span>على قيد الحياة (بدون أطفال)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>مؤشر الحياة</span>
+              <div className="w-4 h-4 rounded-full bg-white border border-red-400 flex items-center justify-center text-xs">❤️</div>
+              <span>مؤشر الحياة (قلب أحمر)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center text-white text-xs font-bold">3</div>
@@ -841,7 +855,7 @@ export default function FamilyTree({ refreshTrigger }: FamilyTreeProps) {
               <span>زر التفاصيل (انقر لعرض المعلومات الكاملة والتعديل)</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على الزر الأزرق (ℹ) لعرض التفاصيل الكاملة وإمكانية التعديل.</span>
+              <span className="text-gray-600">انقر على العقدة للتوسيع/الطي، أو على الزر الأزرق (ℹ) لعرض التفاصيل الكاملة وإمكانية التعديل. القلب الأحمر يظهر فقط للأحياء.</span>
             </div>
           </div>
         </div>
