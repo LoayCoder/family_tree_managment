@@ -16,15 +16,20 @@ export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPag
           <div className="py-4 sm:py-6">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3 sm:gap-4">
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl shadow-lg">
-                  <TreePine className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                    بني عمير
-                  </h1>
-                  <p className="text-sm sm:text-base text-gray-600 font-medium">قبيلة عريقة بتاريخ مجيد</p>
-                </div>
+                <button 
+                  onClick={() => window.location.href = '/'}
+                  className="flex items-center gap-3 sm:gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl shadow-lg">
+                    <TreePine className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                      بني عمير
+                    </h1>
+                    <p className="text-sm sm:text-base text-gray-600 font-medium">قبيلة عريقة بتاريخ مجيد</p>
+                  </div>
+                </button>
               </div>
               
               <div className="hidden sm:flex items-center gap-3">
