@@ -158,40 +158,45 @@ export default function ArabicFamilyTreeDemo() {
       <div className="container mx-auto px-6 py-4">
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200">
-            <button
-              onClick={() => setActiveTab('tree')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
-                activeTab === 'tree'
-                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              <TreePine className="w-5 h-5" />
-              شجرة آل عمير
-            </button>
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
-                activeTab === 'search'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              <Search className="w-5 h-5" />
-              البحث المتقدم
-            </button>
-            <button
-              onClick={() => setActiveTab('stats')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
-                activeTab === 'stats'
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              الإحصائيات
-            </button>
+          <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200 w-full max-w-4xl">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-1">
+              <button
+                onClick={() => setActiveTab('tree')}
+                className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                  activeTab === 'tree'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <TreePine className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">شجرة آل عمير</span>
+                <span className="sm:hidden">الشجرة</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                  activeTab === 'search'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">البحث المتقدم</span>
+                <span className="sm:hidden">البحث</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('stats')}
+                className={`flex-1 px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                  activeTab === 'stats'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">الإحصائيات</span>
+                <span className="sm:hidden">الإحصائيات</span>
+              </button>
+            </div>
           </div>
         </div>
 
