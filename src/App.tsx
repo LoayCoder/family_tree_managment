@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Crown, Calendar, Image, FileText } from 'lucide-react';
+import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Calendar, Image, FileText } from 'lucide-react';
 import ArabicFamilyTreeDemo from './components/ArabicFamilyTreeDemo';
 import DataEntryManager from './components/DataEntry/DataEntryManager';
 import FamilyTree from './components/FamilyTree';
@@ -8,8 +8,6 @@ import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import NewsPage from './components/NewsPage';
-import NotablesPage from './components/NotablesPage';
-import NotableDetailCard from './components/NotableDetailCard';
 import { supabase } from './services/arabicFamilyService';
 import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
@@ -27,12 +25,11 @@ interface User {
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'notables' | 'notable-detail' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(true);
-  const [selectedNotableId, setSelectedNotableId] = useState<number | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -219,32 +216,6 @@ function App() {
     return <NewsPage onBack={() => setActiveView('landing')} user={user} />;
   }
 
-  if (activeView === 'notables') {
-    return (
-      <NotablesPage 
-        onBack={() => setActiveView('landing')} 
-        onViewDetails={(notableId) => {
-          setSelectedNotableId(notableId);
-          setActiveView('notable-detail');
-        }}
-        user={user}
-      />
-    );
-  }
-
-  if (activeView === 'notable-detail' && selectedNotableId) {
-    return (
-      <NotableDetailCard 
-        notableId={selectedNotableId}
-        onBack={() => {
-          setSelectedNotableId(null);
-          setActiveView('notables');
-        }}
-        user={user}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -405,19 +376,6 @@ function App() {
             >
               <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>الدليل</span>
-            </button>
-            
-            <button
-              onClick={() => setActiveView('notables')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap ${
-                activeView === 'notables'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              <Crown className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hide-on-mobile">الشخصيات</span>
-              <span className="show-on-mobile">الشخصيات</span>
             </button>
             
             <button

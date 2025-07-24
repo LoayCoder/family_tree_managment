@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Calendar, MapPin, Building, Heart, Skull, Users } from 'lucide-react';
+import { User, Calendar, MapPin, Building, Heart, Skull, Users, Crown } from 'lucide-react';
 import { ChildrenDisplayManager } from './ChildrenDisplay/ChildrenDisplayManager';
 import { childrenService } from '../services/childrenService';
 import { PersonWithDetails } from '../services/arabicFamilyService';
@@ -57,6 +57,12 @@ export default function PersonCard({ person }: PersonCardProps) {
               <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded-full text-gray-600">
                 الجيل {person.مستوى_الجيل}
               </span>
+              {person.is_notable && (
+                <span className="text-xs bg-amber-100 px-1.5 py-0.5 rounded-full text-amber-700 flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  شخصية بارزة
+                </span>
+              )}
               {person.رقم_هوية_وطنية && (
                 <span className="text-xs bg-blue-100 px-1.5 py-0.5 rounded-full text-blue-700 truncate max-w-[100px]">
                   {person.رقم_هوية_وطنية}

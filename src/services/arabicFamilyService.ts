@@ -93,6 +93,17 @@ export interface PersonWithDetails extends Person {
   اسم_الفرع?: string;
   مكان_الميلاد?: string;
   مكان_الوفاة?: string;
+  // Notable information
+  is_notable?: boolean;
+  notable_id?: number;
+  notable_category?: string;
+  notable_biography?: string;
+  notable_education?: string;
+  notable_positions?: string;
+  notable_publications?: string;
+  notable_contact_info?: string;
+  notable_legacy?: string;
+  notable_profile_picture_url?: string;
 }
 
 export const arabicFamilyService = {
@@ -176,13 +187,43 @@ export const arabicFamilyService = {
       throw new Error('Supabase client not initialized');
     }
 
+    // Join with notables table to get notable information
     const { data, error } = await supabase
       .from('عرض_الأشخاص_كامل')
-      .select('*')
+      .select(`
+        *,
+        notables (
+          id,
+          category,
+          biography,
+          education,
+          positions,
+          publications,
+          contact_info,
+          legacy,
+          profile_picture_url
+        )
+      `)
       .order('path');
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to include notable information
+    const transformedData = (data || []).map(person => ({
+      ...person,
+      is_notable: !!person.notables,
+      notable_id: person.notables?.id,
+      notable_category: person.notables?.category,
+      notable_biography: person.notables?.biography,
+      notable_education: person.notables?.education,
+      notable_positions: person.notables?.positions,
+      notable_publications: person.notables?.publications,
+      notable_contact_info: person.notables?.contact_info,
+      notable_legacy: person.notables?.legacy,
+      notable_profile_picture_url: person.notables?.profile_picture_url
+    }));
+    
+    return transformedData;
   },
 
   async addPerson(person: Omit<Person, 'id' | 'path' | 'تاريخ_الإنشاء' | 'تاريخ_التحديث'>) {
@@ -226,6 +267,70 @@ export const arabicFamilyService = {
       .from('الأشخاص')
       .delete()
       .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Notable Services
+  async addNotable(notableData: {
+    person_id: number;
+    category: string;
+    biography?: string;
+    education?: string;
+    positions?: string;
+    publications?: string;
+    contact_info?: string;
+    legacy?: string;
+    profile_picture_url?: string;
+  }) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabase
+      .from('notables')
+      .insert([notableData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateNotable(notableId: number, updates: {
+    category?: string;
+    biography?: string;
+    education?: string;
+    positions?: string;
+    publications?: string;
+    contact_info?: string;
+    legacy?: string;
+    profile_picture_url?: string;
+  }) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { data, error } = await supabase
+      .from('notables')
+      .update(updates)
+      .eq('id', notableId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteNotable(notableId: number) {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    const { error } = await supabase
+      .from('notables')
+      .delete()
+      .eq('id', notableId);
 
     if (error) throw error;
   },
