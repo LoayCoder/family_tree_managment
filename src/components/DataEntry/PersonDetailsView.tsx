@@ -610,7 +610,6 @@ export default function PersonDetailsView({ personId, onClose, onDataUpdated }: 
                 )}
               </div>
             </div>
-          </div>
         )}
 
         {/* Add Tab */}
