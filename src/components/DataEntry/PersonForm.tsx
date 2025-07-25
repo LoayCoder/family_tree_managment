@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { User, Calendar, MapPin, FileText, Save, X, Building, Hash, Heart, Skull, Image, Trash2, AlertCircle, Crown, GraduationCap, Briefcase, BookOpen, Phone, Award, Star } from 'lucide-react';
 import { arabicFamilyService, Location, Branch, PersonWithDetails } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
+import { getCurrentUserLevel } from '../../utils/userUtils';
 
 interface PersonFormData {
   الاسم_الأول: string;
@@ -50,6 +51,8 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
   const [isCheckingNationalId, setIsCheckingNationalId] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [notableImagePreview, setNotableImagePreview] = useState<string | null>(null);
+  const [userLevel, setUserLevel] = useState<string>('');
+  const [pendingSubmission, setPendingSubmission] = useState(false);
 
   const isEditing = editData && 'id' in editData;
 
@@ -101,7 +104,17 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
   useEffect(() => {
     loadInitialData();
+    checkUserLevel();
   }, []);
+
+  const checkUserLevel = async () => {
+    try {
+      const level = await getCurrentUserLevel();
+      setUserLevel(level);
+    } catch (error) {
+      console.error('Error getting user level:', error);
+    }
+  };
 
   // Debounced national ID validation
   useEffect(() => {
@@ -323,16 +336,59 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
       let personId: number;
 
-      if (isEditing) {
-        await arabicFamilyService.updatePerson(editData.id, personData);
-        personId = editData.id;
+      // Check if user is family_secretary for immediate approval
+      if (userLevel === 'family_secretary') {
+        // Family secretary can make changes directly
+        if (isEditing) {
+          await arabicFamilyService.updatePerson(editData.id, personData);
+          personId = editData.id;
+        } else {
+          const newPerson = await arabicFamilyService.addPerson(personData);
+          personId = newPerson.id;
+        }
       } else {
-        const newPerson = await arabicFamilyService.addPerson(personData);
-        personId = newPerson.id;
+        // Level manager or other roles - submit for approval
+        const changeType = isEditing ? 'update' : 'insert';
+        const originalPersonId = isEditing ? editData.id : null;
+        
+        // Add notable fields to person data if applicable
+        if (data.is_notable && data.notable_category) {
+          Object.assign(personData, {
+            is_notable: data.is_notable,
+            notable_category: data.notable_category,
+            notable_biography: data.notable_biography || undefined,
+            notable_education: data.notable_education || undefined,
+            notable_positions: data.notable_positions || undefined,
+            notable_publications: data.notable_publications || undefined,
+            notable_contact_info: data.notable_contact_info || undefined,
+            notable_legacy: data.notable_legacy || undefined,
+            notable_profile_picture_url: data.notable_profile_picture_url || undefined
+          });
+        }
+        
+        const { data: result, error } = await supabase!.rpc('submit_person_change', {
+          p_change_type: changeType,
+          p_original_person_id: originalPersonId,
+          p_person_data: personData
+        });
+        
+        if (error) throw error;
+        
+        if (result === -1) {
+          // Immediate approval (family secretary)
+          personId = originalPersonId || 0;
+        } else {
+          // Submitted for approval
+          setPendingSubmission(true);
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+          return;
+        }
       }
 
-      // Handle notable information
-      if (data.is_notable && data.notable_category) {
+      // Handle notable information for family secretary direct changes
+      if (userLevel === 'family_secretary' && data.is_notable && data.notable_category) {
         const notableData = {
           person_id: personId,
           category: data.notable_category,
@@ -415,6 +471,42 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
             </div>
 
             <div className="p-8 space-y-8">
+              {/* Pending Submission Message */}
+              {pendingSubmission && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+                  <div className="p-3 bg-amber-100 rounded-full w-fit mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال الطلب للموافقة</h3>
+                  <p className="text-amber-700">
+                    تم إرسال {isEditing ? 'تعديل' : 'إضافة'} بيانات الشخص إلى أمين العائلة للموافقة عليها.
+                    ستتلقى إشعاراً عند الموافقة على الطلب أو رفضه.
+                  </p>
+                </div>
+              )}
+
+              {/* User Level Info */}
+              {userLevel && userLevel !== 'family_secretary' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <span className="font-medium text-blue-800">مستوى المستخدم: </span>
+                      <span className="text-blue-700">
+                        {userLevel === 'level_manager' ? 'مدير فرع' :
+                         userLevel === 'content_writer' ? 'كاتب محتوى' :
+                         userLevel === 'family_member' ? 'عضو عائلة' : userLevel}
+                      </span>
+                    </div>
+                  </div>
+                  {userLevel === 'level_manager' && (
+                    <p className="text-blue-600 text-sm mt-2">
+                      جميع التغييرات التي تقوم بها ستُرسل إلى أمين العائلة للموافقة عليها قبل تطبيقها.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -1019,12 +1111,15 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري الحفظ...
+                    {userLevel === 'family_secretary' ? 'جاري الحفظ...' : 'جاري الإرسال للموافقة...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {isEditing ? 'تحديث البيانات' : 'حفظ البيانات'}
+                    {userLevel === 'family_secretary' 
+                      ? (isEditing ? 'تحديث البيانات' : 'حفظ البيانات')
+                      : (isEditing ? 'إرسال التعديل للموافقة' : 'إرسال للموافقة')
+                    }
                   </>
                 )}
               </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { FileText, Save, X, Calendar, Globe, Tag, Image, Trash2, Eye, EyeOff, User, AlertCircle } from 'lucide-react';
 import { supabase } from '../../services/arabicFamilyService';
+import { getCurrentUserLevel } from '../../utils/userUtils';
 
 interface NewsPostFormData {
   title: string;
@@ -24,6 +25,8 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [contentPreview, setContentPreview] = useState(false);
+  const [userLevel, setUserLevel] = useState<string>('');
+  const [pendingSubmission, setPendingSubmission] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<NewsPostFormData>({
     defaultValues: editData ? {
@@ -50,7 +53,17 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
 
   useEffect(() => {
     getCurrentUser();
+    checkUserLevel();
   }, []);
+
+  const checkUserLevel = async () => {
+    try {
+      const level = await getCurrentUserLevel();
+      setUserLevel(level);
+    } catch (error) {
+      console.error('Error getting user level:', error);
+    }
+  };
 
   // Update image preview when URL changes
   useEffect(() => {
@@ -153,15 +166,22 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
       // Convert tags string to array
       const tagsArray = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
+      // Determine status based on user level
+      let postStatus = data.status;
+      if (userLevel === 'content_writer' && data.status === 'published') {
+        postStatus = 'pending_approval';
+      }
+
       const newsPostData = {
         title: data.title,
         content: data.content,
         author_id: currentUser.id,
-        status: data.status,
+        status: postStatus,
         is_public: data.is_public,
         tags: tagsArray.length > 0 ? tagsArray : null,
         featured_image_url: data.featured_image_url || null,
-        published_at: data.status === 'published' ? (data.published_at || new Date().toISOString()) : null
+        published_at: postStatus === 'published' ? (data.published_at || new Date().toISOString()) : null,
+        submitted_for_approval_at: postStatus === 'pending_approval' ? new Date().toISOString() : null
       };
 
       if (editData) {
@@ -177,6 +197,15 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
           .insert([newsPostData]);
         
         if (error) throw error;
+      }
+
+      // Show pending submission message for content writers
+      if (userLevel === 'content_writer' && data.status === 'published') {
+        setPendingSubmission(true);
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+        return;
       }
 
       onSuccess();
@@ -226,6 +255,20 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
             </div>
 
             <div className="p-8 space-y-8">
+              {/* Pending Submission Message */}
+              {pendingSubmission && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+                  <div className="p-3 bg-amber-100 rounded-full w-fit mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال المقال للموافقة</h3>
+                  <p className="text-amber-700">
+                    تم إرسال المقال إلى أمين العائلة للموافقة على نشره.
+                    ستتلقى إشعاراً عند الموافقة على المقال أو رفضه.
+                  </p>
+                </div>
+              )}
+
               {/* Author Info */}
               {currentUser && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -234,8 +277,19 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                     <div>
                       <span className="font-medium text-blue-800">الكاتب: </span>
                       <span className="text-blue-700">{currentUser.full_name || currentUser.email}</span>
+                      {userLevel && (
+                        <span className="mr-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                          {userLevel === 'family_secretary' ? 'أمين العائلة' :
+                           userLevel === 'content_writer' ? 'كاتب محتوى' : userLevel}
+                        </span>
+                      )}
                     </div>
                   </div>
+                  {userLevel === 'content_writer' && (
+                    <p className="text-blue-600 text-sm mt-2">
+                      جميع المقالات التي تقوم بنشرها ستُرسل إلى أمين العائلة للموافقة عليها قبل النشر.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -313,11 +367,19 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                     <select
                       {...register('status')}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      disabled={userLevel === 'content_writer'}
                     >
                       <option value="draft">مسودة</option>
-                      <option value="published">منشور</option>
+                      <option value="published">
+                        {userLevel === 'content_writer' ? 'إرسال للنشر' : 'منشور'}
+                      </option>
                       <option value="archived">مؤرشف</option>
                     </select>
+                    {userLevel === 'content_writer' && (
+                      <p className="text-sm text-blue-600">
+                        عند اختيار "إرسال للنشر" سيتم إرسال المقال لأمين العائلة للموافقة عليه
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -515,12 +577,15 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري الحفظ...
+                    {userLevel === 'content_writer' && watchStatus === 'published' ? 'جاري الإرسال للموافقة...' : 'جاري الحفظ...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {editData ? 'تحديث المقال' : 'حفظ المقال'}
+                    {userLevel === 'content_writer' && watchStatus === 'published' 
+                      ? 'إرسال للموافقة والنشر'
+                      : (editData ? 'تحديث المقال' : 'حفظ المقال')
+                    }
                   </>
                 )}
               </button>

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { User, Calendar, MapPin, FileText, Save, X, Building, Hash, Heart, Skull, Image, Trash2, AlertCircle } from 'lucide-react';
 import { arabicFamilyService, Location, Branch, PersonWithDetails } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
+import { getCurrentUserLevel } from '../../utils/userUtils';
 
 interface WomanFormData {
   الاسم_الأول: string;
@@ -38,6 +39,8 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
   const [nationalIdError, setNationalIdError] = useState<string>('');
   const [isCheckingNationalId, setIsCheckingNationalId] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [userLevel, setUserLevel] = useState<string>('');
+  const [pendingSubmission, setPendingSubmission] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, setError, clearErrors } = useForm<WomanFormData>({
     defaultValues: editData ? {
@@ -72,7 +75,17 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
 
   useEffect(() => {
     loadInitialData();
+    checkUserLevel();
   }, []);
+
+  const checkUserLevel = async () => {
+    try {
+      const level = await getCurrentUserLevel();
+      setUserLevel(level);
+    } catch (error) {
+      console.error('Error getting user level:', error);
+    }
+  };
 
   // Debounced national ID validation
   useEffect(() => {
@@ -258,17 +271,45 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
 
       let womanId: number;
 
-      if (editData) {
-        await supabase?.from('النساء').update(womanData).eq('id', editData.id);
-        womanId = editData.id;
+      // Check if user is family_secretary for immediate approval
+      if (userLevel === 'family_secretary') {
+        // Family secretary can make changes directly
+        if (editData) {
+          await supabase?.from('النساء').update(womanData).eq('id', editData.id);
+          womanId = editData.id;
+        } else {
+          const { data: newWoman, error } = await supabase?.from('النساء').insert([womanData]).select().single() || {};
+          if (error) throw error;
+          womanId = newWoman?.id;
+        }
       } else {
-        const { data: newWoman, error } = await supabase?.from('النساء').insert([womanData]).select().single() || {};
+        // Level manager or other roles - submit for approval
+        const changeType = editData ? 'update' : 'insert';
+        const originalWomanId = editData ? editData.id : null;
+        
+        const { data: result, error } = await supabase!.rpc('submit_woman_change', {
+          p_change_type: changeType,
+          p_original_woman_id: originalWomanId,
+          p_woman_data: womanData
+        });
+        
         if (error) throw error;
-        womanId = newWoman?.id;
+        
+        if (result === -1) {
+          // Immediate approval (family secretary)
+          womanId = originalWomanId || 0;
+        } else {
+          // Submitted for approval
+          setPendingSubmission(true);
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+          return;
+        }
       }
 
-      // If woman is married and linked to a person, create relationship
-      if (data.الحالة_الاجتماعية === 'متزوجة' && data.linked_person_id) {
+      // If woman is married and linked to a person, create relationship (only for family secretary)
+      if (userLevel === 'family_secretary' && data.الحالة_الاجتماعية === 'متزوجة' && data.linked_person_id) {
         const relationshipData = {
           woman_id: womanId,
           person_id: data.linked_person_id,
@@ -339,6 +380,42 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
             </div>
 
             <div className="p-8 space-y-8">
+              {/* Pending Submission Message */}
+              {pendingSubmission && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+                  <div className="p-3 bg-amber-100 rounded-full w-fit mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال الطلب للموافقة</h3>
+                  <p className="text-amber-700">
+                    تم إرسال {editData ? 'تعديل' : 'إضافة'} بيانات المرأة إلى أمين العائلة للموافقة عليها.
+                    ستتلقى إشعاراً عند الموافقة على الطلب أو رفضه.
+                  </p>
+                </div>
+              )}
+
+              {/* User Level Info */}
+              {userLevel && userLevel !== 'family_secretary' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <span className="font-medium text-blue-800">مستوى المستخدم: </span>
+                      <span className="text-blue-700">
+                        {userLevel === 'level_manager' ? 'مدير فرع' :
+                         userLevel === 'content_writer' ? 'كاتب محتوى' :
+                         userLevel === 'family_member' ? 'عضو عائلة' : userLevel}
+                      </span>
+                    </div>
+                  </div>
+                  {userLevel === 'level_manager' && (
+                    <p className="text-blue-600 text-sm mt-2">
+                      جميع التغييرات التي تقوم بها ستُرسل إلى أمين العائلة للموافقة عليها قبل تطبيقها.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -725,12 +802,15 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري الحفظ...
+                    {userLevel === 'family_secretary' ? 'جاري الحفظ...' : 'جاري الإرسال للموافقة...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {editData ? 'تحديث البيانات' : 'حفظ البيانات'}
+                    {userLevel === 'family_secretary' 
+                      ? (editData ? 'تحديث البيانات' : 'حفظ البيانات')
+                      : (editData ? 'إرسال التعديل للموافقة' : 'إرسال للموافقة')
+                    }
                   </>
                 )}
               </button>
