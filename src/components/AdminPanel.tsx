@@ -5,16 +5,17 @@ import { supabase } from '../services/arabicFamilyService';
 interface UserProfile {
   id: string;
   email: string;
-  full_name: string; // Changed to optional
+  full_name: string;
   user_level: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   approved_at?: string;
   approved_by?: string;
   rejection_reason?: string;
+  assigned_branch_id?: number;
+  branch_name?: string;
 }
 
-// New interface for Branch data
 interface Branch {
   معرف_الفرع: number;
   اسم_الفرع: string;
@@ -35,12 +36,11 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [userToReject, setUserToReject] = useState<string | null>(null);
 
-  // New states for editing user role/branch
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
   const [newLevel, setNewLevel] = useState<UserProfile['user_level']>('viewer');
   const [newBranchId, setNewBranchId] = useState<number | null>(null);
-  const [branches, setBranches] = useState<Branch[]>([]); // State to store branches for dropdown
+  const [branches, setBranches] = useState<Branch[]>([]);
 
   useEffect(() => {
     loadUsers();
@@ -53,7 +53,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         throw new Error('Supabase client not initialized');
       }
 
-      // Fetch users with their assigned branch names
       let query = supabase
         .from('user_profiles')
         .select(`
@@ -65,14 +64,12 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
       const { data: usersData, error: usersError } = await query;
       if (usersError) throw usersError;
 
-      // Map branch name from nested object
       const formattedUsers: UserProfile[] = usersData.map(user => ({
         ...user,
-        branch_name: user.الفروع?.اسم_الفرع || null // Access nested branch name
+        branch_name: user.الفروع?.اسم_الفرع || undefined
       }));
       setUsers(formattedUsers || []);
 
-      // Fetch all branches for the dropdown
       const { data: branchesData, error: branchesError } = await supabase
         .from('الفروع')
         .select('معرف_الفرع, اسم_الفرع')
@@ -97,13 +94,12 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
       const { error } = await supabase.rpc('approve_user', {
         user_id: userId,
         approver_id: currentUserId,
-        new_level: level, // Pass the selected level
-        new_branch_id: branchId // Pass the selected branch ID
+        new_level: level,
+        new_branch_id: branchId
       });
 
       if (error) throw error;
       
-      // Refresh user list
       loadUsers();
     } catch (error) {
       console.error('Error approving user:', error);
@@ -136,7 +132,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
       if (error) throw error;
       
-      // Refresh user list
       loadUsers();
       setShowRejectionModal(false);
     } catch (error) {
@@ -148,7 +143,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     }
   };
 
-  // New function to open edit user modal
   const openEditUserModal = (user: UserProfile) => {
     setUserToEdit(user);
     setNewLevel(user.user_level);
@@ -156,7 +150,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     setShowEditUserModal(true);
   };
 
-  // New function to update user role and branch
   const updateUserRole = async () => {
     if (!userToEdit) return;
 
@@ -175,7 +168,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
       if (error) throw error;
 
-      loadUsers(); // Refresh user list
+      loadUsers();
       setShowEditUserModal(false);
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -187,12 +180,10 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
   };
 
   const filteredUsers = users.filter(user => {
-    // Apply status filter
     if (filter !== 'all' && user.approval_status !== filter) {
       return false;
     }
     
-    // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -256,7 +247,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
           </span>
         );
       case 'admin':
-        // Old admin role, can be mapped or removed later
         return (
           <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full border border-red-200">
             مدير (قديم)
@@ -275,7 +265,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
           </span>
         );
       case 'editor':
-        // Old editor role
         return (
           <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full border border-blue-200">
             محرر (قديم)
@@ -288,7 +277,6 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
           </span>
         );
       case 'viewer':
-        // Old viewer role
         return (
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full border border-green-200">
             مشاهد (قديم)
@@ -481,9 +469,8 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getLevelBadge(user.user_level)}
                         {user.user_level === 'level_manager' && user.branch_name && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <Building className="w-3 h-3" />
-                            <span>الفرع: {user.branch_name}</span>
+                          <div className="text-xs text-purple-600 mt-1 font-medium">
+                            الفرع المسؤول: {user.branch_name}
                           </div>
                         )}
                       </td>
@@ -588,7 +575,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         </div>
       )}
 
-      {/* Edit User Role/Branch Modal */}
+      {/* Edit User Modal */}
       {showEditUserModal && userToEdit && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
