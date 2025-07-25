@@ -80,22 +80,33 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         throw new Error('Supabase client not initialized');
       }
 
-      let query = supabase
+      const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          الفروع (اسم_الفرع)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      const { data: usersData, error: usersError } = await query;
       if (usersError) throw usersError;
 
-      const formattedUsers: UserProfile[] = usersData.map(user => ({
-        ...user,
-        branch_name: user.الفروع?.اسم_الفرع || undefined
-      }));
-      setUsers(formattedUsers || []);
+      // Get branch information for users with assigned branches
+      const usersWithBranches = await Promise.all(
+        (usersData || []).map(async (user) => {
+          if (user.assigned_branch_id) {
+            const { data: branchData } = await supabase
+              .from('الفروع')
+              .select('اسم_الفرع')
+              .eq('معرف_الفرع', user.assigned_branch_id)
+              .single();
+            
+            return {
+              ...user,
+              branch_name: branchData?.اسم_الفرع
+            };
+          }
+          return user;
+        })
+      );
+
+      setUsers(usersWithBranches);
 
       const { data: branchesData, error: branchesError } = await supabase
         .from('الفروع')
@@ -115,23 +126,47 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     try {
       if (!supabase) return;
 
-      const { data: changesData, error } = await supabase
-        .from('pending_changes_summary')
-        .select(`
-          *,
-          user_profiles!inner(full_name, email)
-        `)
+      // Get pending person changes
+      const { data: personChanges, error: personError } = await supabase
+        .from('pending_person_changes')
+        .select('*')
         .eq('approval_status', 'pending')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
+      if (personError) throw personError;
 
-      const formattedChanges: PendingChange[] = changesData.map(change => ({
-        ...change,
-        submitter_name: change.user_profiles?.full_name || change.user_profiles?.email
-      }));
+      // Get pending woman changes
+      const { data: womanChanges, error: womanError } = await supabase
+        .from('pending_woman_changes')
+        .select('*')
+        .eq('approval_status', 'pending')
+        .order('submitted_at', { ascending: false });
 
-      setPendingChanges(formattedChanges);
+      if (womanError) throw womanError;
+
+      // Combine and format changes
+      const allChanges = [
+        ...(personChanges || []).map(change => ({ ...change, change_entity: 'person' as const })),
+        ...(womanChanges || []).map(change => ({ ...change, change_entity: 'woman' as const }))
+      ];
+
+      // Get submitter names
+      const changesWithNames = await Promise.all(
+        allChanges.map(async (change) => {
+          const { data: userData } = await supabase
+            .from('user_profiles')
+            .select('full_name, email')
+            .eq('id', change.submitted_by_user_id)
+            .single();
+          
+          return {
+            ...change,
+            submitter_name: userData?.full_name || userData?.email || 'غير معروف'
+          };
+        })
+      );
+
+      setPendingChanges(changesWithNames);
     } catch (error) {
       console.error('Error loading pending changes:', error);
     }
@@ -143,24 +178,29 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
       const { data: newsData, error } = await supabase
         .from('news_posts')
-        .select(`
-          id,
-          title,
-          author_id,
-          submitted_for_approval_at,
-          user_profiles!inner(full_name, email)
-        `)
+        .select('id, title, author_id, submitted_for_approval_at')
         .eq('status', 'pending_approval')
         .order('submitted_for_approval_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedNews: PendingNewsPost[] = newsData.map(post => ({
-        ...post,
-        author_name: post.user_profiles?.full_name || post.user_profiles?.email
-      }));
+      // Get author names
+      const newsWithAuthors = await Promise.all(
+        (newsData || []).map(async (post) => {
+          const { data: userData } = await supabase
+            .from('user_profiles')
+            .select('full_name, email')
+            .eq('id', post.author_id)
+            .single();
+          
+          return {
+            ...post,
+            author_name: userData?.full_name || userData?.email || 'غير معروف'
+          };
+        })
+      );
 
-      setPendingNews(formattedNews);
+      setPendingNews(newsWithAuthors);
     } catch (error) {
       console.error('Error loading pending news:', error);
     }
