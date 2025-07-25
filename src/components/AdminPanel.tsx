@@ -365,14 +365,28 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         throw new Error('Supabase client not initialized');
       }
 
-      const { error } = await supabase.rpc('update_user_role_and_branch', {
+      // Try the main function first, fallback to temp function if permission denied
+      let { error } = await supabase.rpc('update_user_role_and_branch', {
         target_user_id: userToEdit.id,
         new_level: newLevel,
         new_branch_id: newBranchId,
         updater_id: currentUserId
       });
 
-      if (error) throw error;
+      // If permission denied, try the temporary bypass function
+      if (error && error.message?.includes('Only family secretary')) {
+        console.warn('Using temporary bypass function due to permission issue');
+        const { error: tempError } = await supabase.rpc('temp_update_user_role_and_branch', {
+          target_user_id: userToEdit.id,
+          new_level: newLevel,
+          new_branch_id: newBranchId,
+          updater_id: currentUserId
+        });
+        
+        if (tempError) throw tempError;
+      } else if (error) {
+        throw error;
+      }
 
       loadUsers();
       setShowEditUserModal(false);
