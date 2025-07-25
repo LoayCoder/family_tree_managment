@@ -174,7 +174,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
         options: {
           data: {
             full_name: 'مدير النظام',
-            role_name: 'admin'
+            role_name: data.userLevel
           }
         }
       });
@@ -189,24 +189,6 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
       }
 
       if (authData.user) {
-        // Create admin profile in user_profiles table
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert([{
-            id: authData.user.id,
-            email: '1st.arabcoder@gmail.com',
-            full_name: 'مدير النظام',
-            role_id: adminRoleData.id,
-            approval_status: 'approved',
-            approved_by: authData.user.id,
-            approved_at: new Date().toISOString()
-          }]);
-
-        if (profileError) {
-          console.error('Error creating admin profile:', profileError);
-          throw new Error('فشل في إنشاء ملف المدير. يرجى التحقق من صلاحيات قاعدة البيانات.');
-        }
-
         // User was created successfully
         alert('تم إنشاء حساب المدير بنجاح! يمكنك الآن تسجيل الدخول باستخدام:\nالبريد الإلكتروني: 1st.arabcoder@gmail.com\nكلمة المرور: Admin@123456');
         setShowAdminSetup(false);
