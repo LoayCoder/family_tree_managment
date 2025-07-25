@@ -301,7 +301,46 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           }
 
           if (!profile) {
-            throw new Error('لم يتم العثور على ملف المستخدم. يرجى التواصل مع المدير.');
+            // Auto-create profile for existing auth users without profiles
+            const { data: familyMemberRole, error: roleError } = await supabase
+              .from('roles')
+              .select('id')
+              .eq('name', 'family_member')
+              .single();
+
+            if (roleError) {
+              console.error('Error fetching family_member role:', roleError);
+              throw new Error('خطأ في النظام. يرجى التواصل مع المدير.');
+            }
+
+            // Create default profile
+            const { data: newProfile, error: createError } = await supabase
+              .from('user_profiles')
+              .insert([{
+                id: authData.user.id,
+                email: authData.user.email,
+                full_name: authData.user.user_metadata?.full_name || 'مستخدم جديد',
+                role_id: familyMemberRole.id,
+                approval_status: 'pending'
+              }])
+              .select(`
+                *,
+                roles!inner(name)
+              `)
+              .single();
+
+            if (createError) {
+              console.error('Error creating user profile:', createError);
+              throw new Error('فشل في إنشاء ملف المستخدم. يرجى التواصل مع المدير.');
+            }
+
+            // Check approval status for newly created profile
+            if (newProfile.approval_status !== 'approved') {
+              throw new Error('حسابك قيد المراجعة. سيتم إعلامك عند الموافقة عليه.');
+            }
+
+            // Use the newly created profile
+            profile = newProfile;
           }
 
           // Check if user is approved
