@@ -5,13 +5,19 @@ import { supabase } from '../services/arabicFamilyService';
 interface UserProfile {
   id: string;
   email: string;
-  full_name: string;
-  user_level: 'admin' | 'editor' | 'viewer';
+  full_name: string; // Changed to optional
+  user_level: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   approved_at?: string;
   approved_by?: string;
   rejection_reason?: string;
+}
+
+// New interface for Branch data
+interface Branch {
+  معرف_الفرع: number;
+  اسم_الفرع: string;
 }
 
 interface AdminPanelProps {
@@ -29,6 +35,13 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [userToReject, setUserToReject] = useState<string | null>(null);
 
+  // New states for editing user role/branch
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
+  const [newLevel, setNewLevel] = useState<UserProfile['user_level']>('viewer');
+  const [newBranchId, setNewBranchId] = useState<number | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]); // State to store branches for dropdown
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -40,23 +53,41 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         throw new Error('Supabase client not initialized');
       }
 
+      // Fetch users with their assigned branch names
       let query = supabase
         .from('user_profiles')
-        .select('*')
+        .select(`
+          *,
+          الفروع (اسم_الفرع)
+        `)
         .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      const { data: usersData, error: usersError } = await query;
+      if (usersError) throw usersError;
 
-      if (error) throw error;
-      setUsers(data || []);
+      // Map branch name from nested object
+      const formattedUsers: UserProfile[] = usersData.map(user => ({
+        ...user,
+        branch_name: user.الفروع?.اسم_الفرع || null // Access nested branch name
+      }));
+      setUsers(formattedUsers || []);
+
+      // Fetch all branches for the dropdown
+      const { data: branchesData, error: branchesError } = await supabase
+        .from('الفروع')
+        .select('معرف_الفرع, اسم_الفرع')
+        .order('اسم_الفرع');
+      if (branchesError) throw branchesError;
+      setBranches(branchesData || []);
+
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error loading initial data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const approveUser = async (userId: string) => {
+  const approveUser = async (userId: string, level: UserProfile['user_level'], branchId: number | null) => {
     setProcessingUser(userId);
     try {
       if (!supabase) {
@@ -65,7 +96,9 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
       const { error } = await supabase.rpc('approve_user', {
         user_id: userId,
-        approver_id: currentUserId
+        approver_id: currentUserId,
+        new_level: level, // Pass the selected level
+        new_branch_id: branchId // Pass the selected branch ID
       });
 
       if (error) throw error;
@@ -112,6 +145,44 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     } finally {
       setProcessingUser(null);
       setUserToReject(null);
+    }
+  };
+
+  // New function to open edit user modal
+  const openEditUserModal = (user: UserProfile) => {
+    setUserToEdit(user);
+    setNewLevel(user.user_level);
+    setNewBranchId(user.assigned_branch_id || null);
+    setShowEditUserModal(true);
+  };
+
+  // New function to update user role and branch
+  const updateUserRole = async () => {
+    if (!userToEdit) return;
+
+    setProcessingUser(userToEdit.id);
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      const { error } = await supabase.rpc('update_user_role_and_branch', {
+        target_user_id: userToEdit.id,
+        new_level: newLevel,
+        new_branch_id: newBranchId,
+        updater_id: currentUserId
+      });
+
+      if (error) throw error;
+
+      loadUsers(); // Refresh user list
+      setShowEditUserModal(false);
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      alert('حدث خطأ أثناء تحديث صلاحيات المستخدم');
+    } finally {
+      setProcessingUser(null);
+      setUserToEdit(null);
     }
   };
 
@@ -176,24 +247,51 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     }
   };
 
-  const getLevelBadge = (level: string) => {
+  const getLevelBadge = (level: UserProfile['user_level']) => {
     switch (level) {
-      case 'admin':
+      case 'family_secretary':
         return (
           <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full border border-red-200">
-            مدير
+            أمين العائلة (مدير خارق)
+          </span>
+        );
+      case 'admin':
+        // Old admin role, can be mapped or removed later
+        return (
+          <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full border border-red-200">
+            مدير (قديم)
+          </span>
+        );
+      case 'level_manager':
+        return (
+          <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full border border-purple-200">
+            مدير فرع
+          </span>
+        );
+      case 'content_writer':
+        return (
+          <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full border border-orange-200">
+            كاتب محتوى
           </span>
         );
       case 'editor':
+        // Old editor role
         return (
           <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full border border-blue-200">
-            محرر
+            محرر (قديم)
+          </span>
+        );
+      case 'family_member':
+        return (
+          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full border border-green-200">
+            عضو عائلة
           </span>
         );
       case 'viewer':
+        // Old viewer role
         return (
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full border border-green-200">
-            مشاهد
+            مشاهد (قديم)
           </span>
         );
       default:
@@ -309,7 +407,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                       
                       <div className="flex items-center gap-2 self-end md:self-center">
                         <button
-                          onClick={() => approveUser(user.id)}
+                          onClick={() => openEditUserModal(user)}
                           disabled={processingUser === user.id}
                           className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >
@@ -382,6 +480,12 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getLevelBadge(user.user_level)}
+                        {user.user_level === 'level_manager' && user.branch_name && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                            <Building className="w-3 h-3" />
+                            <span>الفرع: {user.branch_name}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(user.approval_status)}
@@ -390,10 +494,10 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                         {formatDate(user.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                        {user.approval_status === 'pending' && (
+                        {user.approval_status === 'pending' ? (
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => approveUser(user.id)}
+                              onClick={() => openEditUserModal(user)}
                               disabled={processingUser === user.id}
                               className="px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
                             >
@@ -414,6 +518,13 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                               رفض
                             </button>
                           </div>
+                        ) : (
+                          <button
+                            onClick={() => openEditUserModal(user)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                          >
+                            تعديل الصلاحيات
+                          </button>
                         )}
                         
                         {user.approval_status === 'rejected' && user.rejection_reason && (
@@ -470,6 +581,86 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                     <XCircle className="w-4 h-4" />
                   )}
                   تأكيد الرفض
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Role/Branch Modal */}
+      {showEditUserModal && userToEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              {userToEdit.approval_status === 'pending' ? 'موافقة وتعيين المستخدم' : 'تعديل صلاحيات المستخدم'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <User className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">{userToEdit.full_name || userToEdit.email}</h4>
+                  <p className="text-gray-600 text-sm">{userToEdit.email}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">المستوى الوظيفي</label>
+                <select
+                  value={newLevel}
+                  onChange={(e) => setNewLevel(e.target.value as UserProfile['user_level'])}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  <option value="family_member">عضو عائلة</option>
+                  <option value="content_writer">كاتب محتوى</option>
+                  <option value="level_manager">مدير فرع</option>
+                  <option value="family_secretary">أمين العائلة (مدير خارق)</option>
+                  <option value="viewer">مشاهد</option>
+                  <option value="editor">محرر</option>
+                  <option value="admin">مدير</option>
+                </select>
+              </div>
+              
+              {newLevel === 'level_manager' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">الفرع المسؤول</label>
+                  <select
+                    value={newBranchId || ''}
+                    onChange={(e) => setNewBranchId(e.target.value ? parseInt(e.target.value) : null)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">لا يوجد فرع محدد</option>
+                    {branches.map(branch => (
+                      <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
+                        {branch.اسم_الفرع}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowEditUserModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  إلغاء
+                </button>
+                
+                <button
+                  onClick={userToEdit.approval_status === 'pending' ? () => approveUser(userToEdit.id, newLevel, newBranchId) : updateUserRole}
+                  disabled={processingUser === userToEdit.id}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  {processingUser === userToEdit.id ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <CheckCircle className="w-4 h-4" />
+                  )}
+                  {userToEdit.approval_status === 'pending' ? 'موافقة وتعيين' : 'حفظ التغييرات'}
                 </button>
               </div>
             </div>
