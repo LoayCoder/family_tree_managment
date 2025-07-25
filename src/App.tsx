@@ -204,6 +204,7 @@ function App() {
         onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }}
         onNavigate={(view) => setActiveView(view)}
         user={user}
+        onLogout={handleLogout}
       />
     );
   }

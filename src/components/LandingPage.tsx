@@ -1,13 +1,21 @@
 import React from 'react';
-import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Heart, Mountain, FileText } from 'lucide-react';
+import { TreePine, Users, Crown, Shield, Star, ArrowRight, LogIn, UserPlus, Heart, Mountain, FileText, User, LogOut } from 'lucide-react';
 
 interface LandingPageProps {
   onShowAuth: (mode: 'login' | 'signup') => void;
   onNavigate?: (view: string) => void;
   user?: any;
+  onLogout?: () => void;
 }
 
-export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPageProps) {
+export default function LandingPage({ onShowAuth, onNavigate, user, onLogout }: LandingPageProps) {
+  const getUserInitials = (name: string | undefined, email: string) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -32,58 +40,117 @@ export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPag
                 </button>
               </div>
               
-              <div className="hidden sm:flex items-center gap-3">
-                <button 
-                  onClick={() => onShowAuth('login')}
-                  className="flex items-center gap-2 px-4 py-2 border-2 border-emerald-600 text-emerald-700 rounded-xl hover:bg-emerald-50 transition-all font-medium"
-                >
-                  <LogIn className="w-5 h-5" />
-                  الدخول
-                </button>
-                <button
-                  onClick={() => onShowAuth('signup')}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  انضم لنا
-                </button>
-              </div>
-              
-              {/* Navigation for authenticated users */}
-              {user && onNavigate && (
+              {/* Authenticated User Display */}
+              {user && user.approval_status === 'approved' ? (
                 <div className="hidden sm:flex items-center gap-3">
+                  {/* User Info */}
+                  <div className="flex items-center gap-3 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200">
+                    <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      {getUserInitials(user.full_name, user.email)}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-800">{user.full_name || user.email}</p>
+                      <p className="text-xs text-gray-500">
+                        {user.user_level === 'admin' ? 'مدير' :
+                         user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Navigation Buttons */}
                   <button
-                    onClick={() => onNavigate('news')}
+                    onClick={() => onNavigate && onNavigate('news')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
                   >
                     <FileText className="w-5 h-5" />
                     الأخبار
                   </button>
                   <button
-                    onClick={() => onNavigate('arabic')}
+                    onClick={() => onNavigate && onNavigate('arabic')}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-medium"
                   >
                     <TreePine className="w-5 h-5" />
                     النظام
                   </button>
+                  
+                  {/* Logout Button */}
+                  <button
+                    onClick={onLogout}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
+                    title="تسجيل الخروج"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                /* Login/Signup Buttons for non-authenticated users */
+                <div className="hidden sm:flex items-center gap-3">
+                  <button 
+                    onClick={() => onShowAuth('login')}
+                    className="flex items-center gap-2 px-4 py-2 border-2 border-emerald-600 text-emerald-700 rounded-xl hover:bg-emerald-50 transition-all font-medium"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    الدخول
+                  </button>
+                  <button
+                    onClick={() => onShowAuth('signup')}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    انضم لنا
+                  </button>
                 </div>
               )}
               
               {/* Mobile buttons */}
-              <div className="sm:hidden flex items-center gap-2">
-                <button
-                  onClick={() => onShowAuth('login')}
-                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                >
-                  <LogIn className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={() => onShowAuth('signup')}
-                  className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                >
-                  <UserPlus className="w-6 h-6" />
-                </button>
-              </div>
+              {user && user.approval_status === 'approved' ? (
+                <div className="sm:hidden flex items-center gap-2">
+                  {/* Mobile User Avatar */}
+                  <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    {getUserInitials(user.full_name, user.email)}
+                  </div>
+                  
+                  {/* Mobile Navigation */}
+                  <button
+                    onClick={() => onNavigate && onNavigate('news')}
+                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    title="الأخبار"
+                  >
+                    <FileText className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => onNavigate && onNavigate('arabic')}
+                    className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                    title="النظام"
+                  >
+                    <TreePine className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Mobile Logout */}
+                  <button
+                    onClick={onLogout}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="تسجيل الخروج"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="sm:hidden flex items-center gap-2">
+                  <button
+                    onClick={() => onShowAuth('login')}
+                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                  >
+                    <LogIn className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={() => onShowAuth('signup')}
+                    className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  >
+                    <UserPlus className="w-6 h-6" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -123,16 +190,7 @@ export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPag
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
-                  <button
-                    onClick={() => onShowAuth('signup')}
-                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
-                  >
-                    <Heart className="w-6 h-6" />
-                    انضم لعائلتك الكبيرة
-                    <ArrowRight className="w-6 h-6" />
-                  </button>
-
-                  {user ? (
+                  {user && user.approval_status === 'approved' ? (
                     <div className="flex flex-col sm:flex-row gap-4">
                       <button
                         onClick={() => onNavigate && onNavigate('news')}
@@ -141,15 +199,32 @@ export default function LandingPage({ onShowAuth, onNavigate, user }: LandingPag
                         <FileText className="w-5 h-5" />
                         تصفح الأخبار العائلية
                       </button>
+                      <button
+                        onClick={() => onNavigate && onNavigate('arabic')}
+                        className="flex items-center gap-3 px-6 py-3 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-base hover:bg-emerald-50 transition-all"
+                      >
+                        <TreePine className="w-5 h-5" />
+                        دخول النظام الرئيسي
+                      </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => onShowAuth('login')}
-                      className="flex items-center gap-3 px-8 py-4 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all"
-                    >
-                      <LogIn className="w-6 h-6" />
-                      عضو في القبيلة؟ ادخل هنا
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onShowAuth('signup')}
+                        className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
+                      >
+                        <Heart className="w-6 h-6" />
+                        انضم لعائلتك الكبيرة
+                        <ArrowRight className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={() => onShowAuth('login')}
+                        className="flex items-center gap-3 px-8 py-4 border-2 border-emerald-500 text-emerald-700 rounded-2xl font-bold text-lg hover:bg-emerald-50 transition-all"
+                      >
+                        <LogIn className="w-6 h-6" />
+                        عضو في القبيلة؟ ادخل هنا
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
