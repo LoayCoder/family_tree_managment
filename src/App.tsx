@@ -88,7 +88,7 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setShowAuth(false);
-    setActiveView('arabic');
+    setActiveView('landing');
   };
 
   const handleLogout = async () => {
