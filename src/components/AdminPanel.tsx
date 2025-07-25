@@ -7,7 +7,7 @@ interface UserProfile {
   email: string;
   full_name: string;
   role_id: string;
-  role_name: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
+  role_name: string;
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   approved_at?: string;
@@ -1085,7 +1085,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                 <label className="text-sm font-medium text-gray-700">المستوى الوظيفي</label>
                 <select
                   value={newLevel}
-                  onChange={(e) => setNewLevel(e.target.value as UserProfile['role_name'])}
+                  onChange={(e) => setNewLevel(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="family_member">عضو عائلة</option>
