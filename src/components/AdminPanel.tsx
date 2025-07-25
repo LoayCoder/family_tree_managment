@@ -6,7 +6,8 @@ interface UserProfile {
   id: string;
   email: string;
   full_name: string;
-  user_level: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
+  role_id: string;
+  role_name: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   approved_at?: string;
@@ -63,7 +64,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
-  const [newLevel, setNewLevel] = useState<UserProfile['user_level']>('viewer');
+  const [newLevel, setNewLevel] = useState<UserProfile['role_name']>('family_member');
   const [newBranchId, setNewBranchId] = useState<number | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
 
@@ -82,7 +83,10 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select(`
+          *,
+          roles!inner(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
@@ -99,10 +103,14 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
             
             return {
               ...user,
+              role_name: user.roles.name,
               branch_name: branchData?.اسم_الفرع
             };
           }
-          return user;
+          return {
+            ...user,
+            role_name: user.roles.name
+          };
         })
       );
 
@@ -206,19 +214,33 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     }
   };
 
-  const approveUser = async (userId: string, level: UserProfile['user_level'], branchId: number | null) => {
+  const approveUser = async (userId: string, roleName: UserProfile['role_name'], branchId: number | null) => {
     setProcessingUser(userId);
     try {
       if (!supabase) {
         throw new Error('Supabase client not initialized');
       }
 
-      const { error } = await supabase.rpc('approve_user', {
-        user_id: userId,
-        approver_id: currentUserId,
-        new_level: level,
-        new_branch_id: branchId
-      });
+      // Get the role ID for the selected role name
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', roleName)
+        .single();
+
+      if (roleError) throw roleError;
+
+      // Update user profile with role_id and approval
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          role_id: roleData.id,
+          approval_status: 'approved',
+          approved_by: currentUserId,
+          approved_at: new Date().toISOString(),
+          assigned_branch_id: branchId
+        })
+        .eq('id', userId);
 
       if (error) throw error;
       
@@ -351,7 +373,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
 
   const openEditUserModal = (user: UserProfile) => {
     setUserToEdit(user);
-    setNewLevel(user.user_level);
+    setNewLevel(user.role_name);
     setNewBranchId(user.assigned_branch_id || null);
     setShowEditUserModal(true);
   };
@@ -365,28 +387,25 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
         throw new Error('Supabase client not initialized');
       }
 
-      // Try the main function first, fallback to temp function if permission denied
-      let { error } = await supabase.rpc('update_user_role_and_branch', {
-        target_user_id: userToEdit.id,
-        new_level: newLevel,
-        new_branch_id: newBranchId,
-        updater_id: currentUserId
-      });
+      // Get the role ID for the selected role name
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', newLevel)
+        .single();
 
-      // If permission denied, try the temporary bypass function
-      if (error && error.message?.includes('Only family secretary')) {
-        console.warn('Using temporary bypass function due to permission issue');
-        const { error: tempError } = await supabase.rpc('temp_update_user_role_and_branch', {
-          target_user_id: userToEdit.id,
-          new_level: newLevel,
-          new_branch_id: newBranchId,
-          updater_id: currentUserId
-        });
-        
-        if (tempError) throw tempError;
-      } else if (error) {
-        throw error;
-      }
+      if (roleError) throw roleError;
+
+      // Update user profile with new role_id and branch
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          role_id: roleData.id,
+          assigned_branch_id: newBranchId
+        })
+        .eq('id', userToEdit.id);
+
+      if (error) throw error;
 
       loadUsers();
       setShowEditUserModal(false);
@@ -458,8 +477,8 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
     }
   };
 
-  const getLevelBadge = (level: UserProfile['user_level']) => {
-    switch (level) {
+  const getLevelBadge = (roleName: UserProfile['role_name']) => {
+    switch (roleName) {
       case 'family_secretary':
         return (
           <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full border border-red-200">
@@ -505,7 +524,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
       default:
         return (
           <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full border border-gray-200">
-            {level}
+            {roleName}
           </span>
         );
     }
@@ -749,8 +768,8 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getLevelBadge(user.user_level)}
-                          {user.user_level === 'level_manager' && user.branch_name && (
+                          {getLevelBadge(user.role_name)}
+                          {user.role_name === 'level_manager' && user.branch_name && (
                             <div className="text-xs text-purple-600 mt-1 font-medium">
                               الفرع المسؤول: {user.branch_name}
                             </div>
@@ -1057,7 +1076,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                 <label className="text-sm font-medium text-gray-700">المستوى الوظيفي</label>
                 <select
                   value={newLevel}
-                  onChange={(e) => setNewLevel(e.target.value as UserProfile['user_level'])}
+                  onChange={(e) => setNewLevel(e.target.value as UserProfile['role_name'])}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="family_member">عضو عائلة</option>

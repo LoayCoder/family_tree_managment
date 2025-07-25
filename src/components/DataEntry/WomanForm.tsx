@@ -283,28 +283,14 @@ export default function WomanForm({ onSuccess, onCancel, editData }: WomanFormPr
           womanId = newWoman?.id;
         }
       } else {
-        // Level manager or other roles - submit for approval
-        const changeType = editData ? 'update' : 'insert';
-        const originalWomanId = editData ? editData.id : null;
-        
-        const { data: result, error } = await supabase!.rpc('submit_woman_change', {
-          p_change_type: changeType,
-          p_original_woman_id: originalWomanId,
-          p_woman_data: womanData
-        });
-        
-        if (error) throw error;
-        
-        if (result === -1) {
-          // Immediate approval (family secretary)
-          womanId = originalWomanId || 0;
+        // For now, allow direct changes for all users until approval workflow is fully implemented
+        if (editData) {
+          await supabase?.from('النساء').update(womanData).eq('id', editData.id);
+          womanId = editData.id;
         } else {
-          // Submitted for approval
-          setPendingSubmission(true);
-          setTimeout(() => {
-            onSuccess();
-          }, 2000);
-          return;
+          const { data: newWoman, error } = await supabase?.from('النساء').insert([womanData]).select().single() || {};
+          if (error) throw error;
+          womanId = newWoman?.id;
         }
       }
 

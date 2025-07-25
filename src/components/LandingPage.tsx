@@ -51,8 +51,11 @@ export default function LandingPage({ onShowAuth, onNavigate, user, onLogout }: 
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-800">{user.full_name || user.email}</p>
                       <p className="text-xs text-gray-500">
-                        {user.user_level === 'admin' ? 'مدير' :
-                         user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
+                        {user.role_name === 'admin' ? 'مدير' :
+                         user.role_name === 'family_secretary' ? 'أمين العائلة' :
+                         user.role_name === 'level_manager' ? 'مدير فرع' :
+                         user.role_name === 'content_writer' ? 'كاتب محتوى' :
+                         user.role_name === 'editor' ? 'محرر' : 'مشاهد'}
                       </p>
                     </div>
                   </div>

@@ -18,7 +18,7 @@ import ResponsiveButton from './components/responsive/ResponsiveButton';
 interface User {
   id: string;
   email: string;
-  user_level: 'admin' | 'editor' | 'viewer';
+  role_name: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
   full_name?: string;
   approval_status?: 'pending' | 'approved' | 'rejected';
 }
@@ -40,10 +40,13 @@ function App() {
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          // Get user profile with level - use maybeSingle() to handle cases where profile doesn't exist
+          // Get user profile with role - use maybeSingle() to handle cases where profile doesn't exist
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
-            .select('*')
+            .select(`
+              *,
+              roles!inner(name)
+            `)
             .eq('id', session.user.id)
             .maybeSingle();
           
@@ -59,7 +62,7 @@ function App() {
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              user_level: profile.user_level,
+              role_name: profile.roles.name,
               full_name: profile.full_name,
               approval_status: profile.approval_status
             });
@@ -103,11 +106,19 @@ function App() {
     }
   };
 
-  const canAccess = (requiredLevel: 'admin' | 'editor' | 'viewer') => {
+  const canAccess = (requiredLevel: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member') => {
     if (!user || user.approval_status !== 'approved') return false;
     
-    const levels = { viewer: 1, editor: 2, admin: 3 };
-    return levels[user.user_level] >= levels[requiredLevel];
+    const levels = { 
+      viewer: 1, 
+      family_member: 1,
+      content_writer: 2,
+      editor: 2, 
+      level_manager: 3,
+      admin: 3,
+      family_secretary: 4
+    };
+    return levels[user.role_name] >= levels[requiredLevel];
   };
 
   if (loading) {
@@ -241,16 +252,19 @@ function App() {
                   <div className="text-xs sm:text-sm text-gray-600">
                     <span>مرحباً، {user.full_name || user.email}</span>
                     <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                      user.user_level === 'admin' ? 'bg-red-100 text-red-700' :
-                      user.user_level === 'editor' ? 'bg-blue-100 text-blue-700' :
+                      user.role_name === 'admin' || user.role_name === 'family_secretary' ? 'bg-red-100 text-red-700' :
+                      user.role_name === 'editor' || user.role_name === 'level_manager' || user.role_name === 'content_writer' ? 'bg-blue-100 text-blue-700' :
                       'bg-green-100 text-green-700'
                     }`}>
-                      {user.user_level === 'admin' ? 'مدير' :
-                       user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
+                      {user.role_name === 'admin' ? 'مدير' :
+                       user.role_name === 'family_secretary' ? 'أمين العائلة' :
+                       user.role_name === 'level_manager' ? 'مدير فرع' :
+                       user.role_name === 'content_writer' ? 'كاتب محتوى' :
+                       user.role_name === 'editor' ? 'محرر' : 'مشاهد'}
                     </span>
                   </div>
                   
-                  {user.user_level === 'admin' && (
+                  {(user.role_name === 'admin' || user.role_name === 'family_secretary') && (
                     <button
                       onClick={() => setActiveView('admin')}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
@@ -274,7 +288,7 @@ function App() {
               {user && (
                 <div className="show-on-mobile">
                   <ResponsiveFlex gap="xs">
-                    {user.user_level === 'admin' && (
+                    {(user.role_name === 'admin' || user.role_name === 'family_secretary') && (
                       <button
                         onClick={() => setActiveView('admin')}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

@@ -13,7 +13,11 @@ export const getCurrentUserLevel = async (): Promise<string> => {
 
     const { data: profile, error } = await supabase
       .from('user_profiles')
-      .select('user_level, approval_status')
+      .select(`
+        role_id,
+        approval_status,
+        roles!inner(name)
+      `)
       .eq('id', session.user.id)
       .single();
 
@@ -23,7 +27,7 @@ export const getCurrentUserLevel = async (): Promise<string> => {
       throw new Error('User not approved');
     }
 
-    return profile.user_level;
+    return profile.roles.name;
   } catch (error) {
     console.error('Error getting user level:', error);
     return '';

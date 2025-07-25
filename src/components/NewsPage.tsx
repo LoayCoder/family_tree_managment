@@ -54,7 +54,7 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
         .order('published_at', { ascending: false });
 
       // If user is not authenticated or not admin/editor, only show public published posts
-      if (!user || (user.user_level !== 'admin' && user.user_level !== 'editor')) {
+      if (!user || (user.role_name !== 'admin' && user.role_name !== 'editor' && user.role_name !== 'family_secretary' && user.role_name !== 'level_manager' && user.role_name !== 'content_writer')) {
         query = query
           .eq('status', 'published')
           .eq('is_public', true);

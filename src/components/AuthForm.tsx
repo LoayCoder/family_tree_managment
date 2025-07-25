@@ -8,7 +8,7 @@ interface AuthFormData {
   password: string;
   confirmPassword?: string;
   fullName?: string;
-  userLevel?: 'admin' | 'editor' | 'viewer';
+  userLevel?: 'admin' | 'editor' | 'viewer' | 'family_secretary' | 'level_manager' | 'content_writer' | 'family_member';
 }
 
 interface AuthFormProps {
@@ -28,7 +28,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<AuthFormData>({
     defaultValues: {
-      userLevel: 'editor'
+      userLevel: 'family_member'
     }
   });
 
@@ -207,7 +207,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           options: {
             data: {
               full_name: data.fullName,
-              user_level: data.userLevel
+              role_name: data.userLevel
             }
           }
         });
@@ -215,6 +215,18 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
         if (signUpError) throw signUpError;
 
         if (authData.user) {
+          // Get the role ID for the selected user level
+          const { data: roleData, error: roleError } = await supabase
+            .from('roles')
+            .select('id')
+            .eq('name', data.userLevel || 'family_member')
+            .single();
+
+          if (roleError) {
+            console.error('Error fetching role:', roleError);
+            throw new Error('خطأ في تحديد نوع المستخدم. يرجى المحاولة مرة أخرى.');
+          }
+
           // Create user profile explicitly
           const { error: profileError } = await supabase
             .from('user_profiles')
@@ -222,7 +234,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
               id: authData.user.id,
               email: authData.user.email,
               full_name: data.fullName,
-              user_level: data.userLevel || 'viewer',
+              role_id: roleData.id,
               approval_status: 'pending'
             }]);
 
@@ -244,10 +256,13 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
         if (signInError) throw signInError;
 
         if (authData.user) {
-          // Get user profile - use maybeSingle() to handle missing profiles gracefully
+          // Get user profile with role - use maybeSingle() to handle missing profiles gracefully
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
-            .select('*')
+            .select(`
+              *,
+              roles!inner(name)
+            `)
             .eq('id', authData.user.id)
             .maybeSingle();
 
@@ -269,7 +284,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
             id: authData.user.id,
             email: authData.user.email,
             full_name: profile?.full_name,
-            user_level: profile?.user_level || 'viewer',
+            role_name: profile?.roles?.name || 'viewer',
             approval_status: profile?.approval_status
           });
         }
@@ -473,12 +488,16 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
                   مستوى المستخدم *
                 </label>
                 <select
-                  {...register('userLevel', { required: 'مستوى المستخدم مطلوب' })}
+                  {...register('userLevel', { required: 'نوع المستخدم مطلوب' })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 >
-                  <option value="viewer">مشاهد - عرض البيانات فقط</option>
-                  <option value="editor">محرر - إضافة وتعديل البيانات</option>
-                  <option value="admin">مدير - صلاحيات كاملة</option>
+                  <option value="family_member">عضو عائلة - عرض البيانات المعتمدة</option>
+                  <option value="content_writer">كاتب محتوى - إنشاء المقالات والأخبار</option>
+                  <option value="level_manager">مدير فرع - إدارة بيانات فرع معين</option>
+                  <option value="family_secretary">أمين العائلة - صلاحيات كاملة</option>
+                  <option value="viewer">مشاهد (قديم) - عرض البيانات فقط</option>
+                  <option value="editor">محرر (قديم) - إضافة وتعديل البيانات</option>
+                  <option value="admin">مدير (قديم) - صلاحيات كاملة</option>
                 </select>
                 {errors.userLevel && (
                   <p className="text-red-500 text-sm">{errors.userLevel.message}</p>
