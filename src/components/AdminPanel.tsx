@@ -84,7 +84,16 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
         .select(`
-          *,
+          id,
+          email,
+          full_name,
+          role_id,
+          approval_status,
+          created_at,
+          approved_at,
+          approved_by,
+          rejection_reason,
+          assigned_branch_id,
           roles!inner(name)
         `)
         .order('created_at', { ascending: false });
@@ -686,7 +695,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
                           </div>
                         
                           <div className="flex flex-wrap gap-2 mt-2">
-                            {getLevelBadge(user.user_level)}
+                            {getLevelBadge(user.role_name)}
                             {getStatusBadge(user.approval_status)}
                             <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full border border-gray-200 text-sm">
                               تاريخ الطلب: {formatDate(user.created_at)}

@@ -89,6 +89,17 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
         throw new Error('خدمة المصادقة غير متاحة. يرجى التحقق من إعدادات النظام.');
       }
 
+      // Get admin role ID first
+      const { data: adminRoleData, error: adminRoleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', 'admin')
+        .single();
+
+      if (adminRoleError) {
+        throw new Error('فشل في العثور على دور المدير في النظام.');
+      }
+
       // First, try to sign in with existing admin credentials
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: '1st.arabcoder@gmail.com',
@@ -115,7 +126,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
               id: signInData.user.id,
               email: '1st.arabcoder@gmail.com',
               full_name: 'مدير النظام',
-              user_level: 'admin',
+              role_id: adminRoleData.id,
               approval_status: 'approved'
             }]);
 
@@ -128,7 +139,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           const { error: updateError } = await supabase
             .from('user_profiles')
             .update({
-              user_level: 'admin',
+              role_id: adminRoleData.id,
               approval_status: 'approved',
               approved_by: signInData.user.id,
               approved_at: new Date().toISOString()
@@ -145,7 +156,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           id: signInData.user.id,
           email: signInData.user.email,
           full_name: 'مدير النظام',
-          user_level: 'admin',
+          role_name: 'admin',
           approval_status: 'approved'
         });
         return;
@@ -163,7 +174,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
         options: {
           data: {
             full_name: 'مدير النظام',
-            user_level: 'admin'
+            role_name: data.userLevel
           }
         }
       });
