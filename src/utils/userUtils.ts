@@ -14,7 +14,6 @@ export const getCurrentUserLevel = async (): Promise<string> => {
     const { data: profile, error } = await supabase
       .from('user_profiles')
       .select(`
-        role_id,
         approval_status,
         roles!inner(name)
       `)
