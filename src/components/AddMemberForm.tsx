@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm, watch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Plus, User, Calendar, Phone, FileText, Heart, Skull } from 'lucide-react';
 import { FamilyMember, FamilyMemberFormData } from '../types/FamilyMember';
 import { familyService } from '../services/supabase';
