@@ -167,6 +167,10 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
         throw new Error('يجب تسجيل الدخول لإنشاء المقالات');
       }
 
+      if (userLevel === '') {
+        throw new Error('حسابك غير مصرح له بإنشاء أو تعديل المقالات. يرجى التأكد من موافقة حسابك.');
+      }
+
       // Convert tags string to array
       const tagsArray = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
