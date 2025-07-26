@@ -37,7 +37,16 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const { data: authListener } = authService.supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        // This listener will automatically update the session and refresh tokens
+        // No explicit action needed here, just ensuring the session is managed
+        checkUser(); // Re-check user status on auth state change
+      }
+    );
+
     checkUser();
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   // Updated checkUser function using authService
