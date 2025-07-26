@@ -167,8 +167,14 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
         throw new Error('يجب تسجيل الدخول لإنشاء المقالات');
       }
 
+      // Check if user account is approved and has proper role
       if (userLevel === '') {
-        throw new Error('حسابك غير مصرح له بإنشاء أو تعديل المقالات. يرجى التأكد من موافقة حسابك.');
+        throw new Error('حسابك غير مصرح له بإنشاء أو تعديل المقالات. يرجى التأكد من موافقة حسابك من قبل أمين العائلة.');
+      }
+
+      // Additional check for content submission permissions
+      if (!['family_secretary', 'admin', 'content_writer', 'editor', 'level_manager'].includes(userLevel)) {
+        throw new Error('ليس لديك الصلاحيات اللازمة لإرسال المحتوى. يرجى التواصل مع أمين العائلة.');
       }
 
       // Convert tags string to array
@@ -198,6 +204,13 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
         submitted_for_approval_at: postStatus === 'pending_approval' ? new Date().toISOString() : null
       };
 
+      // Debug logging to help identify RLS issues
+      console.log('Submitting news post with data:', {
+        ...newsPostData,
+        userLevel,
+        currentUserId: currentUser.id,
+        isContentSubmission
+      });
       if (editData) {
         const { error } = await supabase
           .from('news_posts')
@@ -225,7 +238,15 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
       onSuccess();
     } catch (error) {
       console.error('Error saving news post:', error);
-      alert('حدث خطأ أثناء حفظ المقال');
+      
+      // Provide more specific error messages
+      if (error.message?.includes('row-level security policy')) {
+        alert('خطأ في الصلاحيات: لا يمكنك إنشاء المقالات. يرجى التأكد من موافقة حسابك من قبل أمين العائلة والتأكد من صلاحياتك.');
+      } else if (error.message?.includes('Invalid Refresh Token')) {
+        alert('انتهت صلاحية جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى.');
+      } else {
+        alert(`حدث خطأ أثناء حفظ المقال: ${error.message || 'خطأ غير معروف'}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
