@@ -45,7 +45,7 @@ function App() {
             .from('user_profiles')
             .select(`
               *,
-              roles(name)
+              roles!inner(name)
             `)
             .eq('id', session.user.id)
             .maybeSingle();
@@ -62,76 +62,77 @@ function App() {
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-            roles!inner(name)
+              role_name: profile.roles.name,
               full_name: profile.full_name,
               approval_status: profile.approval_status
-          .single();
+            });
           } else {
             // Profile doesn't exist - this shouldn't happen in normal flow
-          console.error('Error fetching profile:', profileError);
-          
-          // If profile doesn't exist (PGRST116), create one
-          if (profileError.code === 'PGRST116') {
-            console.log('Profile not found, creating new profile for user:', session.user.id);
+            console.error('Error fetching profile:', profileError);
             
-            try {
-              // Get the default 'family_member' role ID
-              const { data: defaultRole, error: roleError } = await supabase
-                .from('roles')
-                .select('id')
-                .eq('name', 'family_member')
-                .single();
+            // If profile doesn't exist (PGRST116), create one
+            if (profileError.code === 'PGRST116') {
+              console.log('Profile not found, creating new profile for user:', session.user.id);
               
-              if (roleError) {
-                console.error('Error fetching default role:', roleError);
-                await supabase.auth.signOut();
-                setUser(null);
-                return;
-              }
-              
-              // Create new user profile
-              const { data: newProfile, error: insertError } = await supabase
-                .from('user_profiles')
-                .insert([{
+              try {
+                // Get the default 'family_member' role ID
+                const { data: defaultRole, error: roleError } = await supabase
+                  .from('roles')
+                  .select('id')
+                  .eq('name', 'family_member')
+                  .single();
+                
+                if (roleError) {
+                  console.error('Error fetching default role:', roleError);
+                  await supabase.auth.signOut();
+                  setUser(null);
+                  return;
+                }
+                
+                // Create new user profile
+                const { data: newProfile, error: insertError } = await supabase
+                  .from('user_profiles')
+                  .insert([{
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || null,
+                    role_id: defaultRole.id,
+                    approval_status: 'pending'
+                  }])
+                  .select(`
+                    *,
+                    roles!inner(name)
+                  `)
+                  .single();
+                
+                if (insertError) {
+                  console.error('Error creating profile:', insertError);
+                  await supabase.auth.signOut();
+                  setUser(null);
+                  return;
+                }
+                
+                setUser({
                   id: session.user.id,
                   email: session.user.email || '',
-                  full_name: session.user.user_metadata?.full_name || null,
-                  role_id: defaultRole.id,
-                  approval_status: 'pending'
-                }])
-                .select(`
-                  *,
-                  roles!inner(name)
-                `)
-                .single();
-              
-              if (insertError) {
-                console.error('Error creating profile:', insertError);
+                  role_name: newProfile.roles.name,
+                  full_name: newProfile.full_name,
+                  approval_status: newProfile.approval_status
+                });
+                return;
+                
+              } catch (createError) {
+                console.error('Error creating user profile:', createError);
                 await supabase.auth.signOut();
                 setUser(null);
                 return;
               }
-              
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                role_name: newProfile.roles.name,
-                full_name: newProfile.full_name,
-                approval_status: newProfile.approval_status
-              });
-              return;
-              
-            } catch (createError) {
-              console.error('Error creating user profile:', createError);
-              await supabase.auth.signOut();
-              setUser(null);
-              return;
             }
+            // This shouldn't happen now with the create logic above
+            console.warn('User session exists but no profile found after creation attempt');
+            setUser(null);
+            return;
           }
-          // This shouldn't happen now with the create logic above
-          console.warn('User session exists but no profile found after creation attempt');
-          setUser(null);
-          return;
         }
       }
     } catch (error) {
