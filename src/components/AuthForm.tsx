@@ -268,21 +268,31 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
 
         if (authData.user) {
           // Get user profile with role - use maybeSingle() to handle missing profiles gracefully
+          console.log('Attempting to fetch profile for user:', authData.user.id);
+          
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select(`
               *
             `)
             .eq('id', authData.user.id)
-            .maybeSingle();
+            .single();
+
+          console.log('Profile fetch result:', { profile, profileError });
 
           if (profileError) {
             console.error('Error fetching profile:', profileError);
-            throw new Error('خطأ في الوصول إلى ملف المستخدم. يرجى المحاولة مرة أخرى.');
+            
+            // If it's a "not found" error, provide more specific guidance
+            if (profileError.code === 'PGRST116') {
+              throw new Error('لم يتم العثور على ملف المستخدم في قاعدة البيانات. يرجى التواصل مع المدير لإنشاء ملف المستخدم.');
+            }
+            
+            throw new Error(`خطأ في الوصول إلى ملف المستخدم: ${profileError.message}`);
           }
 
           if (!profile) {
-            throw new Error('لم يتم العثور على ملف المستخدم. يرجى التواصل مع المدير.');
+            throw new Error('ملف المستخدم فارغ. يرجى التواصل مع المدير لإنشاء ملف المستخدم.');
           }
 
           // Check if user is approved
