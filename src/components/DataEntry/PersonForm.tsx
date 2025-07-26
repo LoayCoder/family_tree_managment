@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, Calendar, MapPin, Phone, FileText, Save, X, Building, Hash, AlertCircle, Image, Skull, Heart, Trash2 } from 'lucide-react';
-import { arabicFamilyService, PersonWithDetails, Location, Branch } from '../../services/arabicFamilyService';
+import { User, Calendar, MapPin, FileText, Save, X, Building, Hash, Heart, Skull, Image, Trash2, AlertCircle, Crown, GraduationCap, Briefcase, BookOpen, Phone, Award, Star } from 'lucide-react';
+import { arabicFamilyService, Location, Branch, PersonWithDetails } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
+import { getCurrentUserLevel } from '../../utils/userUtils';
 
 interface PersonFormData {
   الاسم_الأول: string;
@@ -22,34 +23,41 @@ interface PersonFormData {
   صورة_شخصية: string;
   ملاحظات: string;
   is_deceased: boolean;
+  // Notable member fields
+  is_notable: boolean;
+  notable_category: string;
+  notable_biography: string;
+  notable_education: string;
+  notable_positions: string;
+  notable_publications: string;
+  notable_contact_info: string;
+  notable_legacy: string;
+  notable_profile_picture_url: string;
 }
 
 interface PersonFormProps {
   onSuccess: () => void;
   onCancel: () => void;
-  editData?: PersonWithDetails;
-}
-
-interface Woman {
-  id: number;
-  الاسم_الأول: string;
-  اسم_الأب?: string;
-  اسم_العائلة?: string;
+  editData?: PersonWithDetails | { father_id?: number };
 }
 
 export default function PersonForm({ onSuccess, onCancel, editData }: PersonFormProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [persons, setPersons] = useState<PersonWithDetails[]>([]);
-  const [women, setWomen] = useState<Woman[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [nationalIdError, setNationalIdError] = useState<string>('');
   const [isCheckingNationalId, setIsCheckingNationalId] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [notableImagePreview, setNotableImagePreview] = useState<string | null>(null);
+  const [userLevel, setUserLevel] = useState<string>('');
+  const [pendingSubmission, setPendingSubmission] = useState(false);
+
+  const isEditing = editData && 'id' in editData;
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, setError, clearErrors } = useForm<PersonFormData>({
-    defaultValues: editData ? {
+    defaultValues: isEditing ? {
       الاسم_الأول: editData.الاسم_الأول,
       is_root: editData.is_root || false,
       تاريخ_الميلاد: editData.تاريخ_الميلاد || '',
@@ -66,25 +74,47 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       معرف_الفرع: editData.معرف_الفرع || '',
       صورة_شخصية: editData.صورة_شخصية || '',
       ملاحظات: editData.ملاحظات || '',
-      is_deceased: !!editData.تاريخ_الوفاة
+      is_deceased: !!editData.تاريخ_الوفاة,
+      is_notable: editData.is_notable || false,
+      notable_category: editData.notable_category || '',
+      notable_biography: editData.notable_biography || '',
+      notable_education: editData.notable_education || '',
+      notable_positions: editData.notable_positions || '',
+      notable_publications: editData.notable_publications || '',
+      notable_contact_info: editData.notable_contact_info || '',
+      notable_legacy: editData.notable_legacy || '',
+      notable_profile_picture_url: editData.notable_profile_picture_url || ''
     } : {
       الجنس: 'ذكر',
-      is_root: false,
       الحالة_الاجتماعية: 'أعزب',
-      is_deceased: false
+      is_root: false,
+      is_deceased: false,
+      father_id: editData?.father_id || '',
+      is_notable: false,
+      notable_category: ''
     }
   });
 
   const watchDeathDate = watch('تاريخ_الوفاة');
-  const watchIsRoot = watch('is_root');
-  const watchNationalId = watch('رقم_هوية_وطنية');
   const watchIsDeceased = watch('is_deceased');
-  const watchMaritalStatus = watch('الحالة_الاجتماعية');
+  const watchNationalId = watch('رقم_هوية_وطنية');
   const watchImageUrl = watch('صورة_شخصية');
+  const watchIsNotable = watch('is_notable');
+  const watchNotableImageUrl = watch('notable_profile_picture_url');
 
   useEffect(() => {
     loadInitialData();
+    checkUserLevel();
   }, []);
+
+  const checkUserLevel = async () => {
+    try {
+      const level = await getCurrentUserLevel();
+      setUserLevel(level);
+    } catch (error) {
+      console.error('Error getting user level:', error);
+    }
+  };
 
   // Debounced national ID validation
   useEffect(() => {
@@ -95,7 +125,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         setNationalIdError('');
         clearErrors('رقم_هوية_وطنية');
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [watchNationalId]);
@@ -109,6 +139,15 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     }
   }, [watchImageUrl]);
 
+  // Update notable image preview when URL changes
+  useEffect(() => {
+    if (watchNotableImageUrl) {
+      setNotableImagePreview(watchNotableImageUrl);
+    } else {
+      setNotableImagePreview(null);
+    }
+  }, [watchNotableImageUrl]);
+
   // Set death date to empty when is_deceased is false
   useEffect(() => {
     if (!watchIsDeceased) {
@@ -116,6 +155,21 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       setValue('مكان_الوفاة', '');
     }
   }, [watchIsDeceased, setValue]);
+
+  // Clear notable fields when is_notable is unchecked
+  useEffect(() => {
+    if (!watchIsNotable) {
+      setValue('notable_category', '');
+      setValue('notable_biography', '');
+      setValue('notable_education', '');
+      setValue('notable_positions', '');
+      setValue('notable_publications', '');
+      setValue('notable_contact_info', '');
+      setValue('notable_legacy', '');
+      setValue('notable_profile_picture_url', '');
+      setNotableImagePreview(null);
+    }
+  }, [watchIsNotable, setValue]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -129,21 +183,12 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
       setBranches(branchesData);
       setPersons(personsData);
 
-      // Load women for marriage relationship
-      if (supabase) {
-        const { data: womenData, error } = await supabase
-          .from('النساء')
-          .select('id, الاسم_الأول, اسم_الأب, اسم_العائلة')
-          .order('الاسم_الأول');
-        
-        if (!error && womenData) {
-          setWomen(womenData);
-        }
-      }
-
-      // Set image preview if editing
-      if (editData?.صورة_شخصية) {
+      // Set image previews if editing
+      if (isEditing && editData.صورة_شخصية) {
         setImagePreview(editData.صورة_شخصية);
+      }
+      if (isEditing && editData.notable_profile_picture_url) {
+        setNotableImagePreview(editData.notable_profile_picture_url);
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -163,7 +208,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     try {
       const isUnique = await arabicFamilyService.isPersonNationalIdUnique(
         nationalId, 
-        editData?.id
+        isEditing ? editData.id : undefined
       );
       
       if (!isUnique) {
@@ -189,20 +234,17 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.includes('image/jpeg') && !file.type.includes('image/png')) {
       alert('يرجى اختيار صورة بتنسيق JPG أو PNG فقط');
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert('حجم الصورة يجب أن لا يتجاوز 2 ميجابايت');
       return;
     }
 
     try {
-      // Create a preview using FileReader
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
@@ -210,31 +252,36 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         setValue('صورة_شخصية', result);
       };
       reader.readAsDataURL(file);
-
-      // Note: Supabase storage upload is commented out until the 'images' bucket is created
-      // To enable storage upload, create an 'images' bucket in your Supabase project dashboard
-      /*
-      if (supabase) {
-        const fileName = `person_${Date.now()}_${file.name}`;
-        const { data, error } = await supabase.storage
-          .from('images')
-          .upload(`profiles/${fileName}`, file);
-
-        if (error) {
-          throw error;
-        }
-
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('images')
-          .getPublicUrl(`profiles/${fileName}`);
-
-        setValue('صورة_شخصية', publicUrlData.publicUrl);
-        setImagePreview(publicUrlData.publicUrl);
-      }
-      */
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('حدث خطأ أثناء رفع الصورة');
+    }
+  };
+
+  const handleNotableImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.includes('image/jpeg') && !file.type.includes('image/png')) {
+      alert('يرجى اختيار صورة بتنسيق JPG أو PNG فقط');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('حجم الصورة يجب أن لا يتجاوز 2 ميجابايت');
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setNotableImagePreview(result);
+        setValue('notable_profile_picture_url', result);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading notable image:', error);
       alert('حدث خطأ أثناء رفع الصورة');
     }
   };
@@ -244,12 +291,17 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     setImagePreview(null);
   };
 
+  const clearNotableImage = () => {
+    setValue('notable_profile_picture_url', '');
+    setNotableImagePreview(null);
+  };
+
   const onSubmit = async (data: PersonFormData) => {
     // Final validation before submission
     if (data.رقم_هوية_وطنية && data.رقم_هوية_وطنية.trim() !== '') {
       const isUnique = await arabicFamilyService.isPersonNationalIdUnique(
         data.رقم_هوية_وطنية.trim(), 
-        editData?.id
+        isEditing ? editData.id : undefined
       );
       
       if (!isUnique) {
@@ -282,15 +334,83 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         ملاحظات: data.ملاحظات || undefined
       };
 
-      // If person is married, create relationship with wife
-      if (data.الحالة_الاجتماعية === 'متزوج' && data.الجنس === 'ذكر') {
-        // This will be handled in a separate function if needed
+      let personId: number;
+
+      // Check if user is family_secretary for immediate approval
+      if (userLevel === 'family_secretary') {
+        // Family secretary can make changes directly
+        if (isEditing) {
+          await arabicFamilyService.updatePerson(editData.id, personData);
+          personId = editData.id;
+        } else {
+          const newPerson = await arabicFamilyService.addPerson(personData);
+          personId = newPerson.id;
+        }
+      } else {
+        // Level manager or other roles - submit for approval
+        const changeType = isEditing ? 'update' : 'insert';
+        const originalPersonId = isEditing ? editData.id : null;
+        
+        // Add notable fields to person data if applicable
+        if (data.is_notable && data.notable_category) {
+          Object.assign(personData, {
+            is_notable: data.is_notable,
+            notable_category: data.notable_category,
+            notable_biography: data.notable_biography || undefined,
+            notable_education: data.notable_education || undefined,
+            notable_positions: data.notable_positions || undefined,
+            notable_publications: data.notable_publications || undefined,
+            notable_contact_info: data.notable_contact_info || undefined,
+            notable_legacy: data.notable_legacy || undefined,
+            notable_profile_picture_url: data.notable_profile_picture_url || undefined
+          });
+        }
+        
+        const { data: result, error } = await supabase!.rpc('submit_person_change', {
+          p_change_type: changeType,
+          p_original_person_id: originalPersonId,
+          p_person_data: personData
+        });
+        
+        if (error) throw error;
+        
+        if (result === -1) {
+          // Immediate approval (family secretary)
+          personId = originalPersonId || 0;
+        } else {
+          // Submitted for approval
+          setPendingSubmission(true);
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+          return;
+        }
       }
 
-      if (editData) {
-        await arabicFamilyService.updatePerson(editData.id, personData);
-      } else {
-        await arabicFamilyService.addPerson(personData);
+      // Handle notable information for family secretary direct changes
+      if (userLevel === 'family_secretary' && data.is_notable && data.notable_category) {
+        const notableData = {
+          person_id: personId,
+          category: data.notable_category,
+          biography: data.notable_biography || undefined,
+          education: data.notable_education || undefined,
+          positions: data.notable_positions || undefined,
+          publications: data.notable_publications || undefined,
+          contact_info: data.notable_contact_info || undefined,
+          legacy: data.notable_legacy || undefined,
+          profile_picture_url: data.notable_profile_picture_url || undefined
+        };
+
+        if (isEditing && editData.notable_id) {
+          // Update existing notable record
+          await arabicFamilyService.updateNotable(editData.notable_id, notableData);
+        } else {
+          // Create new notable record
+          await arabicFamilyService.addNotable(notableData);
+        }
+      } else if (isEditing && editData.notable_id) {
+        // Remove notable status if unchecked
+        await arabicFamilyService.deleteNotable(editData.notable_id);
       }
 
       onSuccess();
@@ -306,7 +426,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">جاري تحميل البيانات...</p>
         </div>
       </div>
@@ -314,7 +434,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
@@ -324,8 +444,8 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 <User className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  {editData ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  {isEditing ? 'تعديل بيانات الشخص' : 'إضافة شخص جديد'}
                 </h1>
                 <p className="text-gray-600">إدخال المعلومات الشخصية والعائلية</p>
               </div>
@@ -345,12 +465,48 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Form Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-emerald-500 p-6">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6">
               <h2 className="text-2xl font-bold text-white">المعلومات الأساسية</h2>
               <p className="text-blue-100 mt-2">املأ جميع الحقول المطلوبة بدقة</p>
             </div>
 
             <div className="p-8 space-y-8">
+              {/* Pending Submission Message */}
+              {pendingSubmission && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+                  <div className="p-3 bg-amber-100 rounded-full w-fit mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال الطلب للموافقة</h3>
+                  <p className="text-amber-700">
+                    تم إرسال {isEditing ? 'تعديل' : 'إضافة'} بيانات الشخص إلى أمين العائلة للموافقة عليها.
+                    ستتلقى إشعاراً عند الموافقة على الطلب أو رفضه.
+                  </p>
+                </div>
+              )}
+
+              {/* User Level Info */}
+              {userLevel && userLevel !== 'family_secretary' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <span className="font-medium text-blue-800">مستوى المستخدم: </span>
+                      <span className="text-blue-700">
+                        {userLevel === 'level_manager' ? 'مدير فرع' :
+                         userLevel === 'content_writer' ? 'كاتب محتوى' :
+                         userLevel === 'family_member' ? 'عضو عائلة' : userLevel}
+                      </span>
+                    </div>
+                  </div>
+                  {userLevel === 'level_manager' && (
+                    <p className="text-blue-600 text-sm mt-2">
+                      جميع التغييرات التي تقوم بها ستُرسل إلى أمين العائلة للموافقة عليها قبل تطبيقها.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -408,10 +564,10 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <User className="w-4 h-4" />
-                    الجنس *
+                    الجنس
                   </label>
                   <select
-                    {...register('الجنس', { required: 'الجنس مطلوب' })}
+                    {...register('الجنس')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   >
                     <option value="ذكر">ذكر</option>
@@ -428,7 +584,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                     {...register('الحالة_الاجتماعية')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   >
-                    <option value="">اختر الحالة الاجتماعية</option>
                     <option value="أعزب">أعزب</option>
                     <option value="متزوج">متزوج</option>
                     <option value="مطلق">مطلق</option>
@@ -437,96 +592,86 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 </div>
               </div>
 
-              {/* Marriage Information (if married) */}
-              {watchMaritalStatus === 'متزوج' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-4">
-                  <h3 className="font-medium text-blue-800 flex items-center gap-2">
-                    <Heart className="w-5 h-5" />
-                    معلومات الزواج
-                  </h3>
-                  
+              {/* Family Relationships */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  العلاقات العائلية
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <User className="w-4 h-4" />
-                      الزوجة
+                      الوالد
                     </label>
                     <select
+                      {...register('father_id')}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
-                      <option value="">اختر الزوجة من قاعدة البيانات</option>
-                      {women.map((woman) => (
-                        <option key={woman.id} value={woman.id}>
-                          {woman.الاسم_الأول} {woman.اسم_الأب || ''} {woman.اسم_العائلة || ''}
+                      <option value="">اختر الوالد</option>
+                      {persons.filter(p => p.الجنس === 'ذكر').map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.الاسم_الكامل}
                         </option>
                       ))}
                     </select>
-                    <p className="text-sm text-blue-600">
-                      يمكنك اختيار الزوجة من قائمة النساء المسجلات أو إضافة زوجة جديدة من خلال نموذج إضافة امرأة
-                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <User className="w-4 h-4" />
+                      الوالدة
+                    </label>
+                    <select
+                      {...register('mother_id')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">اختر الوالدة</option>
+                      {persons.filter(p => p.الجنس === 'أنثى').map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.الاسم_الكامل}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <Building className="w-4 h-4" />
+                      الفرع العائلي
+                    </label>
+                    <select
+                      {...register('معرف_الفرع')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">اختر الفرع العائلي</option>
+                      {branches.map((branch) => (
+                        <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
+                          {branch.اسم_الفرع}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          {...register('is_root')}
+                          type="checkbox"
+                          className="w-5 h-5 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-5 h-5 text-blue-600" />
+                          <span className="font-medium text-blue-800">جذر العائلة</span>
+                        </div>
+                      </label>
+                      <p className="text-sm text-blue-600 mt-2 mr-8">
+                        حدد هذا الخيار إذا كان هذا الشخص هو الجد الأكبر أو مؤسس الفرع
+                      </p>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* Root Person Checkbox */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    {...register('is_root')}
-                    type="checkbox"
-                    className="w-5 h-5 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
-                  />
-                  <div>
-                    <span className="font-medium text-amber-800">هذا الشخص هو جذر العائلة</span>
-                    <p className="text-sm text-amber-600">حدد هذا الخيار إذا كان هذا الشخص هو المؤسس الأول للعائلة</p>
-                  </div>
-                </label>
               </div>
-
-              {/* Family Relations */}
-              {!watchIsRoot && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                    العلاقات العائلية
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <User className="w-4 h-4" />
-                        الوالد
-                      </label>
-                      <select
-                        {...register('father_id')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      >
-                        <option value="">اختر الوالد</option>
-                        {persons.filter(p => p.الجنس === 'ذكر').map((person) => (
-                          <option key={person.id} value={person.id}>
-                            {person.الاسم_الكامل}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <User className="w-4 h-4" />
-                        الوالدة
-                      </label>
-                      <select
-                        {...register('mother_id')}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      >
-                        <option value="">اختر الوالدة</option>
-                        {persons.filter(p => p.الجنس === 'أنثى').map((person) => (
-                          <option key={person.id} value={person.id}>
-                            {person.الاسم_الكامل}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Death Information */}
               <div className="space-y-6">
@@ -650,7 +795,7 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
 
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <FileText className="w-4 h-4" />
+                      <GraduationCap className="w-4 h-4" />
                       مستوى التعليم
                     </label>
                     <input
@@ -663,45 +808,216 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                 </div>
               </div>
 
-              {/* Branch and Additional Info */}
+              {/* Notable Member Section */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  الشخصيات البارزة
+                </h3>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      {...register('is_notable')}
+                      type="checkbox"
+                      className="w-5 h-5 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-600" />
+                      <span className="font-medium text-amber-800">هل هذا العضو شخصية بارزة؟</span>
+                    </div>
+                  </label>
+                  <p className="text-sm text-amber-600 mt-2 mr-8">
+                    حدد هذا الخيار إذا كان هذا الشخص من الشخصيات البارزة أو المؤثرة في القبيلة
+                  </p>
+                </div>
+
+                {/* Notable Information Fields - Conditional Display */}
+                {watchIsNotable && (
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 space-y-6">
+                    <h4 className="text-lg font-semibold text-amber-800 flex items-center gap-2">
+                      <Star className="w-5 h-5" />
+                      معلومات الشخصية البارزة
+                    </h4>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Award className="w-4 h-4" />
+                        فئة الشخصية البارزة *
+                      </label>
+                      <select
+                        {...register('notable_category', { 
+                          required: watchIsNotable ? 'فئة الشخصية البارزة مطلوبة' : false 
+                        })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                      >
+                        <option value="">اختر الفئة</option>
+                        <option value="Current Tribal Leaders">القيادات القبلية الحالية</option>
+                        <option value="Judges and Legal Experts">القضاة والخبراء القانونيون</option>
+                        <option value="Business Leaders">قادة الأعمال</option>
+                        <option value="Scholars and Academics">العلماء والأكاديميون</option>
+                        <option value="Poets and Artists">الشعراء والفنانون</option>
+                        <option value="Historical Figures">الشخصيات التاريخية</option>
+                      </select>
+                      {errors.notable_category && (
+                        <p className="text-red-500 text-sm">{errors.notable_category.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <User className="w-4 h-4" />
+                        السيرة الذاتية
+                      </label>
+                      <textarea
+                        {...register('notable_biography')}
+                        rows={4}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                        placeholder="أدخل السيرة الذاتية التفصيلية للشخصية البارزة"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <GraduationCap className="w-4 h-4" />
+                          التعليم والمؤهلات
+                        </label>
+                        <textarea
+                          {...register('notable_education')}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                          placeholder="أدخل المؤهلات التعليمية والشهادات"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Briefcase className="w-4 h-4" />
+                          المناصب والوظائف
+                        </label>
+                        <textarea
+                          {...register('notable_positions')}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                          placeholder="أدخل المناصب الحالية والسابقة"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <BookOpen className="w-4 h-4" />
+                          المؤلفات والإنجازات
+                        </label>
+                        <textarea
+                          {...register('notable_publications')}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                          placeholder="أدخل المؤلفات والإنجازات المهمة"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Award className="w-4 h-4" />
+                          الإرث والتأثير
+                        </label>
+                        <textarea
+                          {...register('notable_legacy')}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                          placeholder="أدخل الإرث والتأثير الذي تركه"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Phone className="w-4 h-4" />
+                        معلومات التواصل (للاستخدام الداخلي)
+                      </label>
+                      <textarea
+                        {...register('notable_contact_info')}
+                        rows={2}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors resize-none"
+                        placeholder="أدخل معلومات التواصل (لن تظهر للعامة)"
+                      />
+                      <p className="text-xs text-amber-600">
+                        هذه المعلومات للاستخدام الداخلي فقط ولن تظهر في العرض العام
+                      </p>
+                    </div>
+
+                    {/* Notable Profile Picture */}
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Image className="w-4 h-4" />
+                        صورة الشخصية البارزة (منفصلة)
+                      </label>
+                      
+                      <div className="flex flex-col md:flex-row gap-4 items-start">
+                        <div className="w-full md:w-1/3">
+                          {notableImagePreview ? (
+                            <div className="relative">
+                              <img 
+                                src={notableImagePreview} 
+                                alt="معاينة صورة الشخصية البارزة" 
+                                className="w-full h-auto rounded-xl border border-gray-200 object-cover"
+                                style={{ maxHeight: '200px' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={clearNotableImage}
+                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-full h-40 bg-gray-100 rounded-xl border border-gray-200 flex items-center justify-center">
+                              <Crown className="w-16 h-16 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="w-full md:w-2/3 space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">رفع صورة جديدة</label>
+                            <input
+                              type="file"
+                              accept="image/jpeg, image/png"
+                              onChange={handleNotableImageUpload}
+                              className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-lg file:border-0
+                                file:text-sm file:font-medium
+                                file:bg-amber-50 file:text-amber-700
+                                hover:file:bg-amber-100
+                                file:cursor-pointer"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">أو أدخل رابط الصورة</label>
+                            <input
+                              {...register('notable_profile_picture_url')}
+                              type="url"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
+                              placeholder="أدخل رابط صورة الشخصية البارزة"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Information */}
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                   معلومات إضافية
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Building className="w-4 h-4" />
-                      الفرع العائلي
-                    </label>
-                    <select
-                      {...register('معرف_الفرع')}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="">اختر الفرع العائلي</option>
-                      {branches.map((branch) => (
-                        <option key={branch.معرف_الفرع} value={branch.معرف_الفرع}>
-                          {branch.اسم_الفرع}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <Phone className="w-4 h-4" />
-                      رقم الهاتف
-                    </label>
-                    <input
-                      type="tel"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="أدخل رقم الهاتف"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-
-                {/* Image Upload */}
+                {/* Regular Profile Picture */}
                 <div className="space-y-4">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Image className="w-4 h-4" />
@@ -709,7 +1025,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                   </label>
                   
                   <div className="flex flex-col md:flex-row gap-4 items-start">
-                    {/* Image Preview */}
                     <div className="w-full md:w-1/3">
                       {imagePreview ? (
                         <div className="relative">
@@ -734,7 +1049,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                       )}
                     </div>
                     
-                    {/* Upload Options */}
                     <div className="w-full md:w-2/3 space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">رفع صورة جديدة</label>
@@ -750,8 +1064,6 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
                             hover:file:bg-blue-100
                             file:cursor-pointer"
                         />
-                        <p className="text-xs text-gray-500">يمكنك رفع صورة بتنسيق JPG أو PNG بحجم أقصى 2 ميجابايت</p>
-                        <p className="text-xs text-amber-600">ملاحظة: يتم حفظ الصورة محلياً حالياً. لتفعيل رفع الصور إلى التخزين السحابي، يجب إنشاء bucket باسم 'images' في مشروع Supabase</p>
                       </div>
                       
                       <div className="space-y-2">
@@ -794,17 +1106,20 @@ export default function PersonForm({ onSuccess, onCancel, editData }: PersonForm
               <button
                 type="submit"
                 disabled={isSubmitting || nationalIdError !== '' || isCheckingNationalId}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-xl hover:from-blue-600 hover:to-emerald-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري الحفظ...
+                    {userLevel === 'family_secretary' ? 'جاري الحفظ...' : 'جاري الإرسال للموافقة...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {editData ? 'تحديث البيانات' : 'حفظ البيانات'}
+                    {userLevel === 'family_secretary' 
+                      ? (isEditing ? 'تحديث البيانات' : 'حفظ البيانات')
+                      : (isEditing ? 'إرسال التعديل للموافقة' : 'إرسال للموافقة')
+                    }
                   </>
                 )}
               </button>

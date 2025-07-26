@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Calendar, MapPin, Phone, FileText, Edit, X, Building, Heart, Skull, Users, Plus, ArrowLeft } from 'lucide-react';
+import { User, Calendar, MapPin, Phone, FileText, Edit, X, Building, Heart, Skull, Users, Plus, ArrowLeft, Crown, GraduationCap, Briefcase, BookOpen, Award, Star } from 'lucide-react';
 import { arabicFamilyService, PersonWithDetails } from '../../services/arabicFamilyService';
 import { supabase } from '../../services/arabicFamilyService';
 import PersonForm from './PersonForm';
@@ -509,6 +509,105 @@ export default function PersonDetailsView({ personId, onClose, onDataUpdated }: 
                     </div>
                   )}
                 </div>
+
+                {/* Notable Information */}
+                {person.is_notable && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-600" />
+                      معلومات الشخصية البارزة
+                    </h3>
+                    
+                    {person.notable_category && (
+                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <span className="text-sm text-amber-600">الفئة:</span>
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                          {person.notable_category === 'Current Tribal Leaders' && 'القيادات القبلية الحالية'}
+                          {person.notable_category === 'Judges and Legal Experts' && 'القضاة والخبراء القانونيون'}
+                          {person.notable_category === 'Business Leaders' && 'قادة الأعمال'}
+                          {person.notable_category === 'Scholars and Academics' && 'العلماء والأكاديميون'}
+                          {person.notable_category === 'Poets and Artists' && 'الشعراء والفنانون'}
+                          {person.notable_category === 'Historical Figures' && 'الشخصيات التاريخية'}
+                        </span>
+                      </div>
+                    )}
+
+                    {person.notable_biography && (
+                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">السيرة الذاتية</span>
+                        </div>
+                        <p className="text-sm text-blue-700 leading-relaxed whitespace-pre-line">
+                          {person.notable_biography}
+                        </p>
+                      </div>
+                    )}
+
+                    {person.notable_education && (
+                      <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <GraduationCap className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm font-medium text-purple-800">التعليم والمؤهلات</span>
+                        </div>
+                        <p className="text-sm text-purple-700 leading-relaxed whitespace-pre-line">
+                          {person.notable_education}
+                        </p>
+                      </div>
+                    )}
+
+                    {person.notable_positions && (
+                      <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Briefcase className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm font-medium text-emerald-800">المناصب والوظائف</span>
+                        </div>
+                        <p className="text-sm text-emerald-700 leading-relaxed whitespace-pre-line">
+                          {person.notable_positions}
+                        </p>
+                      </div>
+                    )}
+
+                    {person.notable_publications && (
+                      <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <BookOpen className="w-4 h-4 text-indigo-600" />
+                          <span className="text-sm font-medium text-indigo-800">المؤلفات والإنجازات</span>
+                        </div>
+                        <p className="text-sm text-indigo-700 leading-relaxed whitespace-pre-line">
+                          {person.notable_publications}
+                        </p>
+                      </div>
+                    )}
+
+                    {person.notable_legacy && (
+                      <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Award className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm font-medium text-orange-800">الإرث والتأثير</span>
+                        </div>
+                        <p className="text-sm text-orange-700 leading-relaxed whitespace-pre-line">
+                          {person.notable_legacy}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Notable Profile Picture */}
+                    {person.notable_profile_picture_url && (
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Star className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-800">صورة الشخصية البارزة</span>
+                        </div>
+                        <img 
+                          src={person.notable_profile_picture_url} 
+                          alt="صورة الشخصية البارزة" 
+                          className="w-full max-w-xs h-auto rounded-xl border border-gray-200 object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

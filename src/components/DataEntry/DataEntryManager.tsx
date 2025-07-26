@@ -7,12 +7,13 @@ import BranchForm from './BranchForm';
 import EventForm from './EventForm';
 import AudioFileForm from './AudioFileForm';
 import TextDocumentForm from './TextDocumentForm';
+import NewsPostForm from './NewsPostForm';
 import ExportImportManager from './ExportImportManager';
 import ExcelImportExport from './ExcelImportExport';
 import PersonDetailsView from './PersonDetailsView';
 import { arabicFamilyService } from '../../services/arabicFamilyService';
 
-type FormType = 'person' | 'woman' | 'location' | 'branch' | 'event' | 'audio' | 'text' | 'export-import' | 'excel' | 'person-details';
+type FormType = 'person' | 'woman' | 'location' | 'branch' | 'event' | 'audio' | 'text' | 'news' | 'export-import' | 'excel' | 'person-details';
 
 interface FormOption {
   id: FormType;
@@ -30,9 +31,17 @@ export default function DataEntryManager() {
 
   const formOptions: FormOption[] = [
     {
+      id: 'news',
+      title: 'إضافة خبر/مقالة',
+      description: 'إنشاء مقال إخباري أو خبر للعائلة',
+      icon: <FileText className="w-6 h-6" />,
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600'
+    },
+    {
       id: 'person',
       title: 'إضافة شخص (رجل)',
-      description: 'إضافة رجل جديد إلى شجرة العائلة مع كامل المعلومات',
+      description: 'إضافة رجل جديد إلى شجرة آل عمير مع كامل المعلومات',
       icon: <Users className="w-6 h-6" />,
       color: 'blue',
       gradient: 'from-blue-500 to-blue-600'
@@ -56,7 +65,7 @@ export default function DataEntryManager() {
     {
       id: 'branch',
       title: 'إضافة فرع عائلي',
-      description: 'إضافة فرع جديد للعائلة مع الموقع الجغرافي',
+      description: 'إضافة فرع جديد لآل عمير مع الموقع الجغرافي',
       icon: <Building className="w-6 h-6" />,
       color: 'purple',
       gradient: 'from-purple-500 to-purple-600'
@@ -64,7 +73,7 @@ export default function DataEntryManager() {
     {
       id: 'event',
       title: 'إضافة حدث',
-      description: 'توثيق حدث مهم في تاريخ العائلة',
+      description: 'توثيق حدث مهم في تاريخ آل عمير',
       icon: <Calendar className="w-6 h-6" />,
       color: 'orange',
       gradient: 'from-orange-500 to-orange-600'
@@ -135,6 +144,8 @@ export default function DataEntryManager() {
         return <AudioFileForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
       case 'text':
         return <TextDocumentForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
+      case 'news':
+        return <NewsPostForm onSuccess={handleDataAdded} onCancel={() => setActiveForm(null)} />;
       case 'export-import':
         return <ExportImportManager onCancel={() => setActiveForm(null)} />;
       case 'excel':
@@ -173,7 +184,7 @@ export default function DataEntryManager() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                 مركز إدخال البيانات
               </h1>
-              <p className="text-gray-600 text-lg">إضافة وإدارة جميع بيانات شجرة العائلة</p>
+              <p className="text-gray-600 text-lg">إضافة وإدارة جميع بيانات شجرة آل عمير</p>
             </div>
           </div>
         </div>
@@ -187,7 +198,7 @@ export default function DataEntryManager() {
             اختر نوع البيانات المراد إضافتها
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            استخدم النماذج التالية لإضافة معلومات جديدة إلى قاعدة بيانات العائلة.
+            استخدم النماذج التالية لإضافة معلومات جديدة إلى قاعدة بيانات آل عمير.
             جميع النماذج مصممة لضمان دقة وشمولية البيانات المدخلة.
           </p>
         </div>

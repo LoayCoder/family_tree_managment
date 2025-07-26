@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle } from 'lucide-react';
+import {
+  TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User,
+  Shield, Clock, XCircle, Calendar, Image, FileText
+} from 'lucide-react';
+
 import ArabicFamilyTreeDemo from './components/ArabicFamilyTreeDemo';
 import DataEntryManager from './components/DataEntry/DataEntryManager';
 import FamilyTree from './components/FamilyTree';
@@ -7,19 +11,26 @@ import FamilyDirectory from './components/FamilyDirectory';
 import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
-import { supabase } from './services/arabicFamilyService';
+import NewsPage from './components/NewsPage';
+import { authService, AuthUser } from './services/authService';
+import ResponsiveHeader from './components/responsive/ResponsiveHeader';
+import ResponsiveFooter from './components/responsive/ResponsiveFooter';
+import ResponsiveContainer from './components/responsive/ResponsiveContainer';
+import ResponsiveFlex from './components/responsive/ResponsiveFlex';
+import ResponsiveButton from './components/responsive/ResponsiveButton';
 
+// Updated User interface to match the new role system
 interface User {
   id: string;
   email: string;
-  user_level: 'admin' | 'editor' | 'viewer';
+  role_name: 'family_secretary' | 'family_member' | 'viewer' | 'editor' | 'admin' | 'content_writer' | 'level_manager';
   full_name?: string;
   approval_status?: 'pending' | 'approved' | 'rejected';
 }
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -29,67 +40,38 @@ function App() {
     checkUser();
   }, []);
 
+  // Updated checkUser function using authService
   const checkUser = async () => {
     try {
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Get user profile with level - use maybeSingle() to handle cases where profile doesn't exist
-          const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            // If there's an error fetching profile, sign out the user
-            await supabase.auth.signOut();
-            setUser(null);
-            return;
-          }
-          
-          if (profile) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              user_level: profile.user_level,
-              full_name: profile.full_name,
-              approval_status: profile.approval_status
-            });
-          } else {
-            // Profile doesn't exist - this shouldn't happen in normal flow
-            // Sign out the user and let them try again
-            console.warn('User session exists but no profile found');
-            await supabase.auth.signOut();
-            setUser(null);
-          }
-        }
+      setLoading(true);
+      const currentUser = await authService.getCurrentUser();
+      
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Error checking user:', error);
-      // On any error, clear the user state
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMemberAdded = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  const handleMemberAdded = () => setRefreshTrigger(prev => prev + 1);
 
-  const handleLogin = (userData: User) => {
+  // Updated handleLogin function
+  const handleLogin = (userData: AuthUser) => {
     setUser(userData);
     setShowAuth(false);
-    setActiveView('arabic');
+    setActiveView('landing');
   };
 
+  // Updated handleLogout function using authService
   const handleLogout = async () => {
     try {
-      if (supabase) {
-        await supabase.auth.signOut();
-      }
+      await authService.signOut();
       setUser(null);
       setActiveView('landing');
     } catch (error) {
@@ -97,13 +79,42 @@ function App() {
     }
   };
 
-  const canAccess = (requiredLevel: 'admin' | 'editor' | 'viewer') => {
+  // Updated canAccess function with new role hierarchy
+  const canAccess = (requiredRole: User['role_name']) => {
     if (!user || user.approval_status !== 'approved') return false;
     
-    const levels = { viewer: 1, editor: 2, admin: 3 };
-    return levels[user.user_level] >= levels[requiredLevel];
+    return authService.canAccess(user.role_name, requiredRole);
   };
 
+  // Updated role display helper
+  const getRoleDisplayName = (roleName: string) => {
+    const roleNames = {
+      family_secretary: 'أمين العائلة',
+      admin: 'مدير (قديم)',
+      level_manager: 'مدير فرع',
+      content_writer: 'كاتب محتوى',
+      family_member: 'عضو عائلة',
+      editor: 'محرر (قديم)',
+      viewer: 'مشاهد (قديم)'
+    };
+    return roleNames[roleName as keyof typeof roleNames] || roleName;
+  };
+
+  // Updated role styling helper
+  const getRoleStyle = (roleName: string) => {
+    const roleStyles = {
+      family_secretary: 'bg-purple-100 text-purple-700',
+      admin: 'bg-red-100 text-red-700',
+      level_manager: 'bg-blue-100 text-blue-700',
+      content_writer: 'bg-yellow-100 text-yellow-700',
+      family_member: 'bg-green-100 text-green-700',
+      editor: 'bg-orange-100 text-orange-700',
+      viewer: 'bg-gray-100 text-gray-700'
+    };
+    return roleStyles[roleName as keyof typeof roleStyles] || 'bg-gray-100 text-gray-700';
+  };
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center">
@@ -117,7 +128,7 @@ function App() {
     );
   }
 
-  // Show pending approval message
+  // Pending approval state
   if (user && user.approval_status === 'pending') {
     return (
       <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
@@ -133,6 +144,12 @@ function App() {
             سيتم إعلامك عبر البريد الإلكتروني عند الموافقة على حسابك.
           </p>
           
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>الدور المطلوب:</strong> {getRoleDisplayName(user.role_name)}
+            </p>
+          </div>
+          
           <button
             onClick={handleLogout}
             className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center gap-2 mx-auto"
@@ -145,7 +162,7 @@ function App() {
     );
   }
 
-  // Show rejected message
+  // Rejected state
   if (user && user.approval_status === 'rejected') {
     return (
       <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
@@ -173,10 +190,12 @@ function App() {
     );
   }
 
+  // Not authenticated and trying to access protected routes
   if (!user && activeView !== 'landing') {
     return <LandingPage onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }} />;
   }
 
+  // Show auth form
   if (showAuth) {
     return (
       <AuthForm
@@ -188,14 +207,50 @@ function App() {
     );
   }
 
+  // Landing page
   if (activeView === 'landing') {
-    return <LandingPage onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }} />;
+    return (
+      <LandingPage
+        onShowAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }}
+        onNavigate={(view) => setActiveView(view)}
+        user={user}
+        onLogout={handleLogout}
+      />
+    );
   }
 
+  // Admin panel (only for family_secretary and admin)
   if (activeView === 'admin') {
+    if (!canAccess('admin')) {
+      return (
+        <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md text-center">
+            <div className="text-red-500 mb-4">
+              <Shield className="w-16 h-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
+            <p className="text-gray-600 mb-4">
+              تحتاج إلى صلاحيات مدير للوصول إلى هذا القسم
+            </p>
+            <button
+              onClick={() => setActiveView('landing')}
+              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              العودة للرئيسية
+            </button>
+          </div>
+        </div>
+      );
+    }
     return <AdminPanel onBack={() => setActiveView('arabic')} currentUserId={user?.id || ''} />;
   }
 
+  // News page
+  if (activeView === 'news') {
+    return <NewsPage onBack={() => setActiveView('landing')} user={user} />;
+  }
+
+  // Main authenticated application
   return (
     <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50">
       {/* Header */}
@@ -218,17 +273,13 @@ function App() {
               <div className="flex items-center gap-4">
                 <div className="text-sm text-gray-600">
                   <span>مرحباً، {user.full_name || user.email}</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    user.user_level === 'admin' ? 'bg-red-100 text-red-700' :
-                    user.user_level === 'editor' ? 'bg-blue-100 text-blue-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {user.user_level === 'admin' ? 'مدير' :
-                     user.user_level === 'editor' ? 'محرر' : 'مشاهد'}
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getRoleStyle(user.role_name)}`}>
+                    {getRoleDisplayName(user.role_name)}
                   </span>
                 </div>
                 
-                {user.user_level === 'admin' && (
+                {/* Show admin panel button only for admin-level roles */}
+                {(user.role_name === 'family_secretary' || user.role_name === 'admin') && (
                   <button
                     onClick={() => setActiveView('admin')}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
@@ -264,9 +315,9 @@ function App() {
           </p>
         </div>
 
-        {/* View Toggle */}
+        {/* Navigation Menu */}
         <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200">
+          <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-200 flex flex-wrap gap-2">
             <button
               onClick={() => setActiveView('arabic')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
@@ -279,7 +330,8 @@ function App() {
               النظام المتقدم
             </button>
             
-            {canAccess('editor') && (
+            {/* Data Entry - for content_writer and above */}
+            {canAccess('content_writer') && (
               <button
                 onClick={() => setActiveView('data-entry')}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
@@ -316,25 +368,83 @@ function App() {
               <Heart className="w-5 h-5" />
               دليل العائلة
             </button>
+
+            <button
+              onClick={() => setActiveView('news')}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                activeView === 'news'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              الأخبار
+            </button>
+
+            <button
+              onClick={() => setActiveView('events')}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                activeView === 'events'
+                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar className="w-5 h-5" />
+              المناسبات
+            </button>
+
+            <button
+              onClick={() => setActiveView('gallery')}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                activeView === 'gallery'
+                  ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Image className="w-5 h-5" />
+              المعرض
+            </button>
           </div>
         </div>
 
         {/* Dynamic Content */}
         <div className="content-container">
           {activeView === 'arabic' && <ArabicFamilyTreeDemo />}
-          {activeView === 'data-entry' && canAccess('editor') && <DataEntryManager />}
+          {activeView === 'data-entry' && canAccess('content_writer') && <DataEntryManager />}
           {activeView === 'tree' && <FamilyTree refreshTrigger={refreshTrigger} />}
           {activeView === 'directory' && <FamilyDirectory refreshTrigger={refreshTrigger} />}
+          {activeView === 'events' && (
+            <div className="text-center py-12">
+              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
+                <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-bold text-gray-800 mb-2">صفحة المناسبات</h3>
+                <p className="text-gray-600">هذا القسم قيد التطوير</p>
+              </div>
+            </div>
+          )}
+          {activeView === 'gallery' && (
+            <div className="text-center py-12">
+              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
+                <Image className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-bold text-gray-800 mb-2">معرض الصور</h3>
+                <p className="text-gray-600">هذا القسم قيد التطوير</p>
+              </div>
+            </div>
+          )}
           
-          {activeView === 'data-entry' && !canAccess('editor') && (
+          {/* Access denied for data entry */}
+          {activeView === 'data-entry' && !canAccess('content_writer') && (
             <div className="text-center py-12">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
                 <div className="text-red-500 mb-4">
                   <User className="w-16 h-16 mx-auto" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
-                <p className="text-gray-600">
-                  تحتاج إلى صلاحيات محرر أو مدير للوصول إلى هذا القسم
+                <p className="text-gray-600 mb-4">
+                  تحتاج إلى صلاحيات كاتب محتوى أو أعلى للوصول إلى هذا القسم
+                </p>
+                <p className="text-sm text-gray-500">
+                  دورك الحالي: {getRoleDisplayName(user?.role_name || '')}
                 </p>
               </div>
             </div>
