@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TreePine, Heart, Database, Plus, LogIn, UserPlus, LogOut, User, Shield, Clock, XCircle, Calendar, Image, FileText } from 'lucide-react';
+import { TreePine, Heart, Database, Plus, LogOut, User, Shield, Clock, XCircle, Calendar, Image, FileText } from 'lucide-react';
 import ArabicFamilyTreeDemo from './components/ArabicFamilyTreeDemo';
 import DataEntryManager from './components/DataEntry/DataEntryManager';
 import FamilyTree from './components/FamilyTree';
@@ -9,7 +9,6 @@ import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import NewsPage from './components/NewsPage';
 import { supabase } from './services/arabicFamilyService';
-import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
 import ResponsiveContainer from './components/responsive/ResponsiveContainer';
 import ResponsiveFlex from './components/responsive/ResponsiveFlex';

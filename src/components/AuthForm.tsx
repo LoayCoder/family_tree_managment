@@ -134,7 +134,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
             console.error('Error creating profile:', insertError);
             throw new Error('فشل في إنشاء ملف المدير. يرجى التحقق من صلاحيات قاعدة البيانات.');
           }
-        } else if (profile.user_level !== 'admin' || profile.approval_status !== 'approved') {
+        } else if (profile.role_id !== adminRoleData.id || profile.approval_status !== 'approved') {
           // Update to admin
           const { error: updateError } = await supabase
             .from('user_profiles')
