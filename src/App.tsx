@@ -30,7 +30,7 @@ interface User {
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'events' | 'gallery' | 'news' | 'admin'>('landing');
+  const [activeView, setActiveView] = useState<'landing' | 'arabic' | 'data-entry' | 'tree' | 'directory' | 'events' | 'gallery' | 'news' | 'admin' | 'submit-content'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -245,6 +245,47 @@ function App() {
     return <AdminPanel onBack={() => setActiveView('arabic')} currentUserId={user?.id || ''} />;
   }
 
+  // Submit Content panel (only for content_writer and above)
+  if (activeView === 'submit-content') {
+    if (!canAccess('content_writer')) {
+      return (
+        <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md text-center">
+            <div className="text-red-500 mb-4">
+              <Shield className="w-16 h-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
+            <p className="text-gray-600 mb-4">
+              تحتاج إلى صلاحيات كاتب محتوى أو أعلى للوصول إلى هذا القسم
+            </p>
+            <button
+              onClick={() => setActiveView('landing')}
+              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              العودة للرئيسية
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <NewsPostForm 
+        onSuccess={() => {
+          setActiveView('landing');
+          // Show success message
+          const successDiv = document.createElement('div');
+          successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
+          successDiv.style.direction = 'rtl';
+          successDiv.textContent = 'تم إرسال المحتوى للموافقة بنجاح!';
+          document.body.appendChild(successDiv);
+          setTimeout(() => successDiv.remove(), 5000);
+        }} 
+        onCancel={() => setActiveView('landing')} 
+        isContentSubmission={true}
+      />
+    );
+  }
+
   // News page
   if (activeView === 'news') {
     return <NewsPage onBack={() => setActiveView('landing')} user={user} />;
@@ -345,6 +386,21 @@ function App() {
               </button>
             )}
             
+            {/* Submit Content - for content_writer and above */}
+            {canAccess('content_writer') && (
+              <button
+                onClick={() => setActiveView('submit-content')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                  activeView === 'submit-content'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                إرسال محتوى
+              </button>
+            )}
+            
             <button
               onClick={() => setActiveView('tree')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
@@ -434,6 +490,24 @@ function App() {
           
           {/* Access denied for data entry */}
           {activeView === 'data-entry' && !canAccess('content_writer') && (
+            <div className="text-center py-12">
+              <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
+                <div className="text-red-500 mb-4">
+                  <User className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">غير مصرح</h3>
+                <p className="text-gray-600 mb-4">
+                  تحتاج إلى صلاحيات كاتب محتوى أو أعلى للوصول إلى هذا القسم
+                </p>
+                <p className="text-sm text-gray-500">
+                  دورك الحالي: {getRoleDisplayName(user?.role_name || '')}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Access denied for submit content */}
+          {activeView === 'submit-content' && !canAccess('content_writer') && (
             <div className="text-center py-12">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md mx-auto">
                 <div className="text-red-500 mb-4">

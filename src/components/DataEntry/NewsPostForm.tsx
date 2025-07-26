@@ -6,6 +6,7 @@ import { getCurrentUserLevel } from '../../utils/userUtils';
 
 interface NewsPostFormData {
   title: string;
+  summary: string;
   content: string;
   status: 'draft' | 'published' | 'archived';
   is_public: boolean;
@@ -18,9 +19,10 @@ interface NewsPostFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   editData?: any; // News post data for editing
+  isContentSubmission?: boolean; // Flag to indicate if this is a content submission form
 }
 
-export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPostFormProps) {
+export default function NewsPostForm({ onSuccess, onCancel, editData, isContentSubmission = false }: NewsPostFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -31,6 +33,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<NewsPostFormData>({
     defaultValues: editData ? {
       title: editData.title,
+      summary: editData.summary || '',
       content: editData.content,
       status: editData.status || 'draft',
       is_public: editData.is_public !== false,
@@ -40,6 +43,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
     } : {
       status: 'draft',
       is_public: true,
+      summary: '',
       tags: '',
       featured_image_url: '',
       published_at: new Date().toISOString().split('T')[0]
@@ -166,18 +170,24 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
       // Convert tags string to array
       const tagsArray = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
-      // Determine status based on user level
+      // Determine status based on user level and form type
       let postStatus = data.status;
-      if (userLevel === 'content_writer' && data.status === 'published') {
+      if (isContentSubmission || (userLevel === 'content_writer' && data.status === 'published')) {
         postStatus = 'pending_approval';
+      }
+
+      // Combine summary and content if summary is provided
+      let finalContent = data.content;
+      if (data.summary && data.summary.trim()) {
+        finalContent = `**ملخص:**\n${data.summary.trim()}\n\n**المحتوى الكامل:**\n${data.content}`;
       }
 
       const newsPostData = {
         title: data.title,
-        content: data.content,
+        content: finalContent,
         author_id: currentUser.id,
         status: postStatus,
-        is_public: data.is_public,
+        is_public: isContentSubmission ? false : data.is_public, // Content submissions are private by default
         tags: tagsArray.length > 0 ? tagsArray : null,
         featured_image_url: data.featured_image_url || null,
         published_at: postStatus === 'published' ? (data.published_at || new Date().toISOString()) : null,
@@ -200,7 +210,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
       }
 
       // Show pending submission message for content writers
-      if (userLevel === 'content_writer' && data.status === 'published') {
+      if (isContentSubmission || (userLevel === 'content_writer' && data.status === 'published')) {
         setPendingSubmission(true);
         setTimeout(() => {
           onSuccess();
@@ -229,9 +239,11 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  {editData ? 'تعديل المقال' : 'إضافة مقال جديد'}
+                  {isContentSubmission ? 'إرسال محتوى للموافقة' : (editData ? 'تعديل المقال' : 'إضافة مقال جديد')}
                 </h1>
-                <p className="text-gray-600">إنشاء محتوى إخباري للعائلة</p>
+                <p className="text-gray-600">
+                  {isContentSubmission ? 'إرسال محتوى جديد لأمين العائلة للموافقة عليه' : 'إنشاء محتوى إخباري للعائلة'}
+                </p>
               </div>
             </div>
             <button
@@ -251,7 +263,9 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
             {/* Form Header */}
             <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6">
               <h2 className="text-2xl font-bold text-white">تفاصيل المقال</h2>
-              <p className="text-blue-100 mt-2">أدخل معلومات المقال أو الخبر</p>
+              <p className="text-blue-100 mt-2">
+                {isContentSubmission ? 'أدخل تفاصيل المحتوى المراد إرساله للموافقة' : 'أدخل معلومات المقال أو الخبر'}
+              </p>
             </div>
 
             <div className="p-8 space-y-8">
@@ -259,12 +273,12 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
               {pendingSubmission && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
                   <div className="p-3 bg-amber-100 rounded-full w-fit mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-amber-600" />
+                    <FileText className="w-8 h-8 text-amber-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال المقال للموافقة</h3>
+                  <h3 className="text-xl font-bold text-amber-800 mb-2">تم إرسال المحتوى للموافقة</h3>
                   <p className="text-amber-700">
-                    تم إرسال المقال إلى أمين العائلة للموافقة على نشره.
-                    ستتلقى إشعاراً عند الموافقة على المقال أو رفضه.
+                    تم إرسال المحتوى إلى أمين العائلة للموافقة على نشره.
+                    ستتلقى إشعاراً عند الموافقة على المحتوى أو رفضه.
                   </p>
                 </div>
               )}
@@ -287,7 +301,10 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                   </div>
                   {userLevel === 'content_writer' && (
                     <p className="text-blue-600 text-sm mt-2">
-                      جميع المقالات التي تقوم بنشرها ستُرسل إلى أمين العائلة للموافقة عليها قبل النشر.
+                      {isContentSubmission 
+                        ? 'سيتم إرسال هذا المحتوى إلى أمين العائلة للموافقة عليه قبل النشر.'
+                        : 'جميع المقالات التي تقوم بنشرها ستُرسل إلى أمين العائلة للموافقة عليها قبل النشر.'
+                      }
                     </p>
                   )}
                 </div>
@@ -302,16 +319,41 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <FileText className="w-4 h-4" />
-                    عنوان المقال *
+                    {isContentSubmission ? 'عنوان المحتوى *' : 'عنوان المقال *'}
                   </label>
                   <input
-                    {...register('title', { required: 'عنوان المقال مطلوب' })}
+                    {...register('title', { required: isContentSubmission ? 'عنوان المحتوى مطلوب' : 'عنوان المقال مطلوب' })}
                     type="text"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="أدخل عنواناً جذاباً للمقال"
+                    placeholder={isContentSubmission ? 'أدخل عنواناً واضحاً للمحتوى' : 'أدخل عنواناً جذاباً للمقال'}
                   />
                   {errors.title && (
                     <p className="text-red-500 text-sm">{errors.title.message}</p>
+                  )}
+                </div>
+
+                {/* Summary Field */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <FileText className="w-4 h-4" />
+                    ملخص المحتوى {isContentSubmission ? '*' : '(اختياري)'}
+                  </label>
+                  <textarea
+                    {...register('summary', { required: isContentSubmission ? 'ملخص المحتوى مطلوب' : false })}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    placeholder={isContentSubmission 
+                      ? 'اكتب ملخصاً موجزاً للمحتوى (2-3 جمل)' 
+                      : 'اكتب ملخصاً موجزاً للمقال (اختياري)'
+                    }
+                  />
+                  {errors.summary && (
+                    <p className="text-red-500 text-sm">{errors.summary.message}</p>
+                  )}
+                  {isContentSubmission && (
+                    <p className="text-sm text-blue-600">
+                      الملخص سيساعد أمين العائلة على فهم المحتوى بسرعة قبل الموافقة عليه
+                    </p>
                   )}
                 </div>
 
@@ -319,7 +361,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <FileText className="w-4 h-4" />
-                      محتوى المقال *
+                      {isContentSubmission ? 'المحتوى الكامل *' : 'محتوى المقال *'}
                     </label>
                     <button
                       type="button"
@@ -331,10 +373,13 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                     </button>
                   </div>
                   <textarea
-                    {...register('content', { required: 'محتوى المقال مطلوب' })}
+                    {...register('content', { required: isContentSubmission ? 'المحتوى الكامل مطلوب' : 'محتوى المقال مطلوب' })}
                     rows={12}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                    placeholder="اكتب محتوى المقال هنا... يمكنك استخدام النص العادي أو HTML البسيط"
+                    placeholder={isContentSubmission 
+                      ? 'اكتب المحتوى الكامل هنا... يمكنك استخدام النص العادي أو HTML البسيط'
+                      : 'اكتب محتوى المقال هنا... يمكنك استخدام النص العادي أو HTML البسيط'
+                    }
                   />
                   {errors.content && (
                     <p className="text-red-500 text-sm">{errors.content.message}</p>
@@ -353,6 +398,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
               </div>
 
               {/* Publication Settings */}
+              {!isContentSubmission && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                   إعدادات النشر
@@ -460,25 +506,33 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Tags */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   <Tag className="w-4 h-4" />
-                  العلامات والكلمات المفتاحية
+                  {isContentSubmission ? 'الفئة والعلامات' : 'العلامات والكلمات المفتاحية'}
                 </label>
                 <input
                   {...register('tags')}
                   type="text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="أدخل العلامات مفصولة بفواصل (مثل: أخبار، إنجازات، مناسبات)"
+                  placeholder={isContentSubmission 
+                    ? 'أدخل الفئة والعلامات مفصولة بفواصل (مثل: أخبار، إنجازات، مناسبات)'
+                    : 'أدخل العلامات مفصولة بفواصل (مثل: أخبار، إنجازات، مناسبات)'
+                  }
                 />
                 <p className="text-sm text-gray-500">
-                  استخدم الفواصل للفصل بين العلامات. هذه العلامات تساعد في تصنيف المقالات وتسهيل البحث.
+                  {isContentSubmission 
+                    ? 'استخدم الفواصل للفصل بين الفئات والعلامات. هذا يساعد أمين العائلة في تصنيف المحتوى.'
+                    : 'استخدم الفواصل للفصل بين العلامات. هذه العلامات تساعد في تصنيف المقالات وتسهيل البحث.'
+                  }
                 </p>
               </div>
 
               {/* Featured Image */}
+              {!isContentSubmission && (
               <div className="space-y-4">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   <Image className="w-4 h-4" />
@@ -543,8 +597,25 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Publishing Guidelines */}
+              {isContentSubmission ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  إرشادات إرسال المحتوى
+                </h4>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• تأكد من صحة المعلومات قبل الإرسال</li>
+                  <li>• اكتب ملخصاً واضحاً ومفيداً</li>
+                  <li>• استخدم عنواناً واضحاً ووصفياً</li>
+                  <li>• أضف العلامات المناسبة لتسهيل التصنيف</li>
+                  <li>• سيتم إرسال المحتوى إلى أمين العائلة للموافقة</li>
+                  <li>• ستتلقى إشعاراً عند الموافقة أو الرفض</li>
+                </ul>
+              </div>
+              ) : (
               <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
                 <h4 className="font-medium text-indigo-800 mb-2 flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
@@ -558,6 +629,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                   <li>• اختر حالة "منشور" عندما تكون جاهزاً للنشر</li>
                 </ul>
               </div>
+              )}
             </div>
 
             {/* Form Actions */}
@@ -577,13 +649,15 @@ export default function NewsPostForm({ onSuccess, onCancel, editData }: NewsPost
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {userLevel === 'content_writer' && watchStatus === 'published' ? 'جاري الإرسال للموافقة...' : 'جاري الحفظ...'}
+                    {isContentSubmission || (userLevel === 'content_writer' && watchStatus === 'published') ? 'جاري الإرسال للموافقة...' : 'جاري الحفظ...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    {userLevel === 'content_writer' && watchStatus === 'published' 
-                      ? 'إرسال للموافقة والنشر'
+                    {isContentSubmission 
+                      ? 'إرسال للموافقة'
+                      : userLevel === 'content_writer' && watchStatus === 'published' 
+                        ? 'إرسال للموافقة والنشر'
                       : (editData ? 'تحديث المقال' : 'حفظ المقال')
                     }
                   </>
