@@ -304,7 +304,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
             id: authData.user.id,
             email: authData.user.email,
             full_name: profile?.full_name,
-            role_name: 'unknown_role',
+            role_name: profile?.roles?.name || 'viewer',
             approval_status: profile?.approval_status
           });
         }
