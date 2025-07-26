@@ -126,12 +126,14 @@ function App() {
           }
         }
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      // On any error, clear the user state
-      setUser(null);
-    } finally {
-      setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error checking user:', error);
+        // On any error, clear the user state
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
