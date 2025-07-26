@@ -126,4 +126,169 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
   };
 
   return (
+    <div className="min-h-screen bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 max-w-md w-full">
+        <div className="text-center mb-6">
+          <div className="p-4 bg-emerald-100 rounded-full w-fit mx-auto mb-4">
+            {mode === 'login' ? (
+              <LogIn className="w-8 h-8 text-emerald-600" />
+            ) : (
+              <UserPlus className="w-8 h-8 text-emerald-600" />
+            )}
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
+          </h2>
+          
+          <p className="text-gray-600">
+            {mode === 'login' 
+              ? 'أدخل بياناتك للوصول إلى النظام' 
+              : 'املأ البيانات لإنشاء حساب جديد'
+            }
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <span className="text-red-700 text-sm">{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <span className="text-green-700 text-sm">{success}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الاسم الكامل
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="أدخل اسمك الكامل"
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              البريد الإلكتروني
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="example@email.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              كلمة المرور
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pr-12"
+                placeholder="أدخل كلمة المرور"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          {mode === 'signup' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                نوع العضوية المطلوبة
+              </label>
+              <select
+                value={requestedRole}
+                onChange={(e) => setRequestedRole(e.target.value as any)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="family_member">عضو عائلة (Basic family member)</option>
+                <option value="content_writer">كاتب محتوى (Content writer)</option>
+                <option value="level_manager">مدير فرع (Branch manager)</option>
+                <option value="viewer">مشاهد (Viewer - legacy)</option>
+                <option value="editor">محرر (Editor - legacy)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                سيتم مراجعة طلبك وتحديد الصلاحيات النهائية من قبل مدير النظام
+              </p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                جاري المعالجة...
+              </>
+            ) : (
+              <>
+                {mode === 'login' ? (
+                  <>
+                    <LogIn className="w-5 h-5" />
+                    تسجيل الدخول
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-5 h-5" />
+                    إنشاء الحساب
+                  </>
+                )}
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600">
+            {mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}
+            <button
+              onClick={() => onSwitchMode(mode === 'login' ? 'signup' : 'login')}
+              className="text-emerald-600 hover:text-emerald-700 font-semibold mr-2"
+            >
+              {mode === 'login' ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
+            </button>
+          </p>
+        </div>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={onCancel}
+            className="text-gray-500 hover:text-gray-700 text-sm"
+          >
+            العودة للصفحة الرئيسية
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
     
