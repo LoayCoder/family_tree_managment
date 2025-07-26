@@ -84,7 +84,7 @@ function App() {
               id: session.user.id,
               email: session.user.email || '',
               full_name: session.user.user_metadata?.full_name || null,
-              role_id: defaultRole.id,
+             user_level: defaultRole.id,
               approval_status: 'pending'
             }])
             .select(`*, roles(name)`)
