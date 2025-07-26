@@ -139,7 +139,24 @@ export const authService = {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        throw error;
+        // Check if the error is related to session already being invalid/missing
+        const sessionErrors = [
+          'Session from session_id claim in JWT does not exist',
+          'Invalid Refresh Token',
+          'Auth session missing',
+          'session_not_found'
+        ];
+        
+        const isSessionError = sessionErrors.some(sessionError => 
+          error.message?.includes(sessionError) || error.code?.includes(sessionError)
+        );
+        
+        if (isSessionError) {
+          console.warn('Session already invalid during logout:', error.message);
+          // Don't throw error - allow logout to complete gracefully
+        } else {
+          throw error;
+        }
       }
     } catch (error) {
       console.error('Error signing out:', error);
