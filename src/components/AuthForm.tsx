@@ -272,7 +272,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
             .from('user_profiles')
             .select(`
               *,
-              roles!inner(name)
+              roles(name)
             `)
             .eq('id', authData.user.id)
             .maybeSingle();

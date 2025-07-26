@@ -45,7 +45,7 @@ function App() {
             .from('user_profiles')
             .select(`
               *,
-              roles!inner(name)
+              roles(name)
             `)
             .eq('id', session.user.id)
             .maybeSingle();

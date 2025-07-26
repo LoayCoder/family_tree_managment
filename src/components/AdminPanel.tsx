@@ -94,7 +94,7 @@ export default function AdminPanel({ onBack, currentUserId }: AdminPanelProps) {
           approved_by,
           rejection_reason,
           assigned_branch_id,
-          roles!inner(name)
+          roles(name)
         `)
         .order('created_at', { ascending: false });
 
