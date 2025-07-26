@@ -273,10 +273,11 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select(`
-              *
+              *,
+              roles!inner(name)
             `)
             .eq('id', authData.user.id)
-            .single();
+            .maybeSingle();
 
           console.log('Profile fetch result:', { profile, profileError });
 
@@ -304,7 +305,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
             id: authData.user.id,
             email: authData.user.email,
             full_name: profile?.full_name,
-            role_name: profile?.roles?.name || 'viewer',
+            role_name: profile?.roles?.name || 'family_member',
             approval_status: profile?.approval_status
           });
         }
