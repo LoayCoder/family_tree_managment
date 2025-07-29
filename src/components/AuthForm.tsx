@@ -1,7 +1,7 @@
 // src/components/AuthForm.tsx
 import React, { useState } from 'react';
 import { Eye, EyeOff, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
-import { authService, AuthUser } from '../services/authService';
+import { authService, AuthUser, UserRole } from '../services/authService';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
@@ -14,11 +14,41 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [requestedRole, setRequestedRole] = useState<'family_member' | 'content_writer' | 'level_manager' | 'viewer' | 'editor'>('family_member');
+  const [requestedRoleId, setRequestedRoleId] = useState<string>('');
+  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Load available roles when component mounts
+  React.useEffect(() => {
+    const loadRoles = async () => {
+      setRolesLoading(true);
+      try {
+        const roles = await authService.getAllRoles();
+        setAvailableRoles(roles);
+        
+        // Set default role to 'family_member' if available
+        const defaultRole = roles.find(role => role.name === 'family_member');
+        if (defaultRole) {
+          setRequestedRoleId(defaultRole.id);
+        } else if (roles.length > 0) {
+          setRequestedRoleId(roles[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading roles:', error);
+        setError('فشل في تحميل الأدوار المتاحة');
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+
+    if (mode === 'signup') {
+      loadRoles();
+    }
+  }, [mode]);
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -46,6 +76,11 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
       return false;
     }
     
+    if (mode === 'signup' && !requestedRoleId.trim()) {
+      setError('يرجى اختيار نوع العضوية');
+      return false;
+    }
+    
     return true;
   };
 
@@ -63,7 +98,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
     try {
       if (mode === 'signup') {
         // Sign up new user
-        const result = await authService.signUp(email, password, fullName, requestedRole);
+        const result = await authService.signUp(email, password, fullName, requestedRoleId);
         
         if (result.user) {
           setSuccess('تم إنشاء الحساب بنجاح! يرجى انتظار الموافقة من المدير.');
@@ -73,7 +108,11 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           setEmail('');
           setPassword('');
           setFullName('');
-          setRequestedRole('family_member');
+          // Reset to default role
+          const defaultRole = availableRoles.find(role => role.name === 'family_member');
+          if (defaultRole) {
+            setRequestedRoleId(defaultRole.id);
+          }
           
           // Switch to login mode after a delay
           setTimeout(() => {
@@ -222,20 +261,41 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 نوع العضوية المطلوبة
               </label>
-              <select
-                value={requestedRole}
-                onChange={(e) => setRequestedRole(e.target.value as any)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              >
-                <option value="family_member">عضو عائلة (Basic family member)</option>
-                <option value="content_writer">كاتب محتوى (Content writer)</option>
-                <option value="level_manager">مدير فرع (Branch manager)</option>
-                <option value="viewer">مشاهد (Viewer - legacy)</option>
-                <option value="editor">محرر (Editor - legacy)</option>
-              </select>
+              {rolesLoading ? (
+                <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center justify-center">
+                  <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <span className="text-gray-600">جاري تحميل الأدوار...</span>
+                </div>
+              ) : (
+                <select
+                  value={requestedRoleId}
+                  onChange={(e) => setRequestedRoleId(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  disabled={availableRoles.length === 0}
+                >
+                  <option value="">اختر نوع العضوية</option>
+                  {availableRoles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name === 'family_member' && 'عضو عائلة (Basic family member)'}
+                      {role.name === 'content_writer' && 'كاتب محتوى (Content writer)'}
+                      {role.name === 'level_manager' && 'مدير فرع (Branch manager)'}
+                      {role.name === 'family_secretary' && 'أمين العائلة (Family secretary)'}
+                      {role.name === 'viewer' && 'مشاهد (Viewer - legacy)'}
+                      {role.name === 'editor' && 'محرر (Editor - legacy)'}
+                      {role.name === 'admin' && 'مدير (Admin - legacy)'}
+                      {!['family_member', 'content_writer', 'level_manager', 'family_secretary', 'viewer', 'editor', 'admin'].includes(role.name) && role.description}
+                    </option>
+                  ))}
+                </select>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 سيتم مراجعة طلبك وتحديد الصلاحيات النهائية من قبل مدير النظام
               </p>
+              {availableRoles.length === 0 && !rolesLoading && (
+                <p className="text-xs text-red-500 mt-1">
+                  فشل في تحميل الأدوار المتاحة. يرجى إعادة تحميل الصفحة.
+                </p>
+              )}
             </div>
           )}
 
@@ -291,4 +351,3 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
     </div>
   );
 }
-    
