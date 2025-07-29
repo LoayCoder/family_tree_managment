@@ -244,12 +244,48 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   أخبار ومقالات آل عمير
                 </h1>
-                <p className="text-gray-600">آخر الأخبار والمستجدات العائلية</p>
+                <p className="text-gray-600">
+                  {showMySubmissions ? 'مقالاتي ومحتوياتي المرسلة' : 'آخر الأخبار والمستجدات العائلية'}
+                </p>
               </div>
             </div>
             
-            <div className="text-sm text-gray-600">
-              {filteredPosts.length} مقال
+            <div className="flex items-center gap-4">
+              {/* Content Writer Toggle */}
+              {user && user.role_name === 'content_writer' && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={toggleMySubmissions}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                      showMySubmissions
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'bg-gray-100 text-gray-700 border border-gray-200'
+                    }`}
+                  >
+                    {showMySubmissions ? (
+                      <ToggleRight className="w-5 h-5" />
+                    ) : (
+                      <ToggleLeft className="w-5 h-5" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {showMySubmissions ? 'مقالاتي' : 'الأخبار العامة'}
+                    </span>
+                  </button>
+                </div>
+              )}
+              
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                title="تحديث"
+              >
+                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+              
+              <div className="text-sm text-gray-600">
+                {filteredPosts.length} مقال
+              </div>
             </div>
           </div>
         </div>
@@ -348,15 +384,8 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                         {post.status === 'pending_approval' && post.submitted_for_approval_at && (
                           <>
                             <span>•</span>
-                          <span>{formatDate(selectedPost.published_at || selectedPost.created_at)}</span>
+                            <span>{formatDate(post.submitted_for_approval_at)}</span>
                           </>
-                        )}
-                        {/* Show additional status info for pending/rejected posts */}
-                        {selectedPost.status === 'pending_approval' && selectedPost.submitted_for_approval_at && (
-                          <div className="flex items-center gap-1 text-amber-600">
-                            <Clock className="w-4 h-4" />
-                            <span>أُرسل للموافقة: {formatDate(selectedPost.submitted_for_approval_at)}</span>
-                          </div>
                         )}
                       </div>
                     </div>
@@ -442,8 +471,15 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{formatDate(selectedPost.published_at)}</span>
+                        <span>{formatDate(selectedPost.published_at || selectedPost.created_at)}</span>
                       </div>
+                      {/* Show additional status info for pending/rejected posts */}
+                      {selectedPost.status === 'pending_approval' && selectedPost.submitted_for_approval_at && (
+                        <div className="flex items-center gap-1 text-amber-600">
+                          <Clock className="w-4 h-4" />
+                          <span>أُرسل للموافقة: {formatDate(selectedPost.submitted_for_approval_at)}</span>
+                        </div>
+                      )}
                       {getStatusBadge(selectedPost.status, selectedPost.is_public)}
                     </div>
                   </div>
@@ -452,9 +488,7 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <ArrowLeft className="w-6 h-6" />
-                  <p className="text-gray-600">
-                    {showMySubmissions ? 'مقالاتي ومحتوياتي المرسلة' : 'آخر الأخبار والمستجدات العائلية'}
-                  </p>
+                  </button>
                 </div>
               </div>
 
@@ -494,8 +528,8 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                         </span>
                       ))}
                     </div>
-              <div className="flex items-center gap-4">
-                {/* Content Writer Toggle */}
+                  </div>
+                )}
                 
                 {/* Status Information for Content Writers */}
                 {user && user.role_name === 'content_writer' && selectedPost.author_id === user.id && (
@@ -527,40 +561,6 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                     </div>
                   </div>
                 )}
-                {user && user.role_name === 'content_writer' && (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={toggleMySubmissions}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
-                        showMySubmissions
-                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                          : 'bg-gray-100 text-gray-700 border border-gray-200'
-                      }`}
-                    >
-                      {showMySubmissions ? (
-                        <ToggleRight className="w-5 h-5" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {showMySubmissions ? 'مقالاتي' : 'الأخبار العامة'}
-                      </span>
-                    </button>
-                  </div>
-                )}
-                
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
-                  title="تحديث"
-                >
-                  <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
-                
-                <div className="text-sm text-gray-600">
-                  {filteredPosts.length} مقال
-                </div>
               </div>
             </div>
           </div>
