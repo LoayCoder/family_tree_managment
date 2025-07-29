@@ -73,7 +73,7 @@ export const authService = {
   },
 
   // Sign up new user
-  async signUp(email: string, password: string, fullName: string, roleId: string) {
+  async signUp(email: string, password: string, fullName: string) {
     if (!supabase) {
       throw new Error('Supabase client not initialized');
     }
@@ -84,8 +84,7 @@ export const authService = {
         password,
         options: {
           data: {
-            full_name: fullName,
-            role_id: roleId // Send the role UUID directly to the trigger
+            full_name: fullName
           }
         }
       });
