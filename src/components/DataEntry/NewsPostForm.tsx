@@ -182,7 +182,12 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
 
       // Determine status based on user level and form type
       let postStatus = data.status;
-      if (isContentSubmission || (userLevel === 'content_writer' && data.status === 'published')) {
+      let postIsPublic = data.is_public;
+      
+      if (isContentSubmission) {
+        postStatus = 'pending_approval';
+        postIsPublic = false; // Content submissions are private by default
+      } else if (userLevel === 'content_writer' && data.status === 'published') {
         postStatus = 'pending_approval';
       }
 
@@ -197,7 +202,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
         content: finalContent,
         author_id: currentUser.id,
         status: postStatus,
-        is_public: isContentSubmission ? false : data.is_public, // Content submissions are private by default
+        is_public: postIsPublic,
         tags: tagsArray.length > 0 ? tagsArray : null,
         featured_image_url: data.featured_image_url || null,
         published_at: postStatus === 'published' ? (data.published_at || new Date().toISOString()) : null,
@@ -332,6 +337,12 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
                       }
                     </p>
                   )}
+                  {isContentSubmission && (
+                    <p className="text-blue-600 text-sm mt-2">
+                      سيتم إرسال هذا المحتوى إلى أمين العائلة للموافقة عليه قبل النشر. 
+                      يمكنك متابعة حالة المحتوى من خلال صفحة الأخبار.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -423,7 +434,7 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
               </div>
 
               {/* Publication Settings */}
-              {!isContentSubmission && (
+              {!isContentSubmission && userLevel !== 'content_writer' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                   إعدادات النشر
@@ -438,19 +449,11 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
                     <select
                       {...register('status')}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      disabled={userLevel === 'content_writer'}
                     >
                       <option value="draft">مسودة</option>
-                      <option value="published">
-                        {userLevel === 'content_writer' ? 'إرسال للنشر' : 'منشور'}
-                      </option>
+                      <option value="published">منشور</option>
                       <option value="archived">مؤرشف</option>
                     </select>
-                    {userLevel === 'content_writer' && (
-                      <p className="text-sm text-blue-600">
-                        عند اختيار "إرسال للنشر" سيتم إرسال المقال لأمين العائلة للموافقة عليه
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -527,6 +530,64 @@ export default function NewsPostForm({ onSuccess, onCancel, editData, isContentS
                     </div>
                     <p className="text-sm text-gray-600">
                       {currentUser?.full_name || 'غير محدد'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              )}
+
+              {/* Content Writer Publication Settings */}
+              {!isContentSubmission && userLevel === 'content_writer' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                  إعدادات النشر
+                </h3>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg text-amber-600 mt-1">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-amber-800 font-medium">ملاحظة للكاتب</h3>
+                      <p className="text-amber-700 mt-1">
+                        جميع المقالات التي تقوم بإنشائها ستُرسل إلى أمين العائلة للموافقة عليها قبل النشر.
+                        يمكنك متابعة حالة مقالاتك من خلال صفحة الأخبار.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <FileText className="w-4 h-4" />
+                      حالة المقال
+                    </label>
+                    <select
+                      {...register('status')}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="draft">حفظ كمسودة</option>
+                      <option value="published">إرسال للموافقة والنشر</option>
+                    </select>
+                    <p className="text-sm text-blue-600">
+                      عند اختيار "إرسال للموافقة والنشر" سيتم إرسال المقال لأمين العائلة للموافقة عليه
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <Calendar className="w-4 h-4" />
+                      تاريخ النشر المقترح
+                    </label>
+                    <input
+                      {...register('published_at')}
+                      type="date"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                    <p className="text-sm text-gray-500">
+                      تاريخ مقترح للنشر (يمكن لأمين العائلة تعديله)
                     </p>
                   </div>
                 </div>

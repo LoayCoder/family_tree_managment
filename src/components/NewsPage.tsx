@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Calendar, User, Tag, Search, Filter, Eye, ArrowLeft, Clock, Globe, Heart } from 'lucide-react';
+import { FileText, Calendar, User, Tag, Search, Filter, Eye, ArrowLeft, Clock, Globe, Heart, ToggleLeft, ToggleRight, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/arabicFamilyService';
 
 interface NewsPost {
@@ -32,6 +32,8 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
   const [selectedTag, setSelectedTag] = useState('');
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
+  const [showMySubmissions, setShowMySubmissions] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadNewsPosts();
@@ -53,8 +55,27 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
         `)
         .order('published_at', { ascending: false });
 
-      // If user is not authenticated or not admin/editor, only show public published posts
-      if (!user || (user.role_name !== 'admin' && user.role_name !== 'editor' && user.role_name !== 'family_secretary' && user.role_name !== 'level_manager' && user.role_name !== 'content_writer')) {
+      // Determine what posts to show based on user role and view mode
+      if (!user) {
+        // Unauthenticated users: only public published posts
+        query = query
+          .eq('status', 'published')
+          .eq('is_public', true);
+      } else if (user.role_name === 'family_secretary' || user.role_name === 'admin') {
+        // Family secretary and admin: see all posts regardless of status
+        // No additional filters needed
+      } else if (user.role_name === 'content_writer') {
+        if (showMySubmissions) {
+          // Content writer viewing their submissions: all their posts regardless of status
+          query = query.eq('author_id', user.id);
+        } else {
+          // Content writer viewing public news: only public published posts
+          query = query
+            .eq('status', 'published')
+            .eq('is_public', true);
+        }
+      } else {
+        // Other authenticated users: only public published posts
         query = query
           .eq('status', 'published')
           .eq('is_public', true);
@@ -104,7 +125,14 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
   };
 
   const getStatusBadge = (status: string, isPublic: boolean) => {
-    if (status === 'published' && isPublic) {
+    if (status === 'pending_approval') {
+      return (
+        <span className="flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 rounded-full border border-amber-200 text-xs">
+          <Clock className="w-3 h-3" />
+          قيد الانتظار
+        </span>
+      );
+    } else if (status === 'published' && isPublic) {
       return (
         <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full border border-green-200 text-xs">
           <Globe className="w-3 h-3" />
@@ -125,6 +153,13 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
           مسودة
         </span>
       );
+    } else if (status === 'rejected') {
+      return (
+        <span className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full border border-red-200 text-xs">
+          <XCircle className="w-3 h-3" />
+          مرفوض
+        </span>
+      );
     } else {
       return (
         <span className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-800 rounded-full border border-gray-200 text-xs">
@@ -132,6 +167,19 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
         </span>
       );
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadNewsPosts();
+    setRefreshing(false);
+  };
+
+  const toggleMySubmissions = () => {
+    setShowMySubmissions(!showMySubmissions);
+    // Clear search and filters when switching views
+    setSearchTerm('');
+    setSelectedTag('');
   };
 
   const truncateContent = (content: string, maxLength: number = 200) => {
@@ -211,6 +259,21 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
       <main className="container mx-auto px-6 py-8">
         {/* Search and Filter */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+          {/* View Mode Indicator for Content Writers */}
+          {user && user.role_name === 'content_writer' && showMySubmissions && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="font-medium text-blue-800">عرض مقالاتي</h3>
+                  <p className="text-blue-600 text-sm">
+                    تعرض هذه الصفحة جميع المقالات والمحتويات التي قمت بإرسالها، بما في ذلك المسودات والمقالات قيد الانتظار والمنشورة.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -245,7 +308,8 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-600 mb-2">لا توجد مقالات</h3>
             <p className="text-gray-500">
-              {searchTerm || selectedTag ? 'لم يتم العثور على مقالات تطابق معايير البحث' : 'لم يتم نشر أي مقالات بعد'}
+              {searchTerm || selectedTag ? 'لم يتم العثور على مقالات تطابق معايير البحث' : 
+               showMySubmissions ? 'لم تقم بإرسال أي مقالات بعد' : 'لم يتم نشر أي مقالات بعد'}
             </p>
           </div>
         ) : (
@@ -279,7 +343,21 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                         <span>{post.author?.full_name || 'كاتب غير معروف'}</span>
                         <span>•</span>
                         <Calendar className="w-4 h-4" />
-                        <span>{formatDate(post.published_at)}</span>
+                        <span>{formatDate(post.published_at || post.created_at)}</span>
+                        {/* Show submission date for pending posts */}
+                        {post.status === 'pending_approval' && post.submitted_for_approval_at && (
+                          <>
+                            <span>•</span>
+                          <span>{formatDate(selectedPost.published_at || selectedPost.created_at)}</span>
+                          </>
+                        )}
+                        {/* Show additional status info for pending/rejected posts */}
+                        {selectedPost.status === 'pending_approval' && selectedPost.submitted_for_approval_at && (
+                          <div className="flex items-center gap-1 text-amber-600">
+                            <Clock className="w-4 h-4" />
+                            <span>أُرسل للموافقة: {formatDate(selectedPost.submitted_for_approval_at)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {getStatusBadge(post.status, post.is_public)}
@@ -316,6 +394,32 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                       قراءة المزيد
                     </button>
                   </div>
+                  
+                  {/* Additional info for content writers viewing their submissions */}
+                  {showMySubmissions && user && user.role_name === 'content_writer' && (
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>تاريخ الإنشاء: {formatDate(post.created_at)}</span>
+                        {post.updated_at && post.updated_at !== post.created_at && (
+                          <span>آخر تحديث: {formatDate(post.updated_at)}</span>
+                        )}
+                      </div>
+                      {post.status === 'pending_approval' && (
+                        <div className="mt-2 p-2 bg-amber-50 rounded-lg">
+                          <p className="text-amber-700 text-xs">
+                            المقال قيد المراجعة من قبل أمين العائلة. ستتلقى إشعاراً عند الموافقة أو الرفض.
+                          </p>
+                        </div>
+                      )}
+                      {post.status === 'rejected' && (
+                        <div className="mt-2 p-2 bg-red-50 rounded-lg">
+                          <p className="text-red-700 text-xs">
+                            تم رفض هذا المقال. يرجى مراجعة المحتوى وإعادة الإرسال.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </article>
             ))}
@@ -348,7 +452,9 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <ArrowLeft className="w-6 h-6" />
-                  </button>
+                  <p className="text-gray-600">
+                    {showMySubmissions ? 'مقالاتي ومحتوياتي المرسلة' : 'آخر الأخبار والمستجدات العائلية'}
+                  </p>
                 </div>
               </div>
 
@@ -388,8 +494,73 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
                         </span>
                       ))}
                     </div>
+              <div className="flex items-center gap-4">
+                {/* Content Writer Toggle */}
+                
+                {/* Status Information for Content Writers */}
+                {user && user.role_name === 'content_writer' && selectedPost.author_id === user.id && (
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <h4 className="font-medium text-blue-800 mb-2">معلومات الحالة</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-blue-600">تاريخ الإنشاء:</span>
+                          <span className="text-blue-800">{formatDate(selectedPost.created_at)}</span>
+                        </div>
+                        {selectedPost.updated_at && selectedPost.updated_at !== selectedPost.created_at && (
+                          <div className="flex justify-between">
+                            <span className="text-blue-600">آخر تحديث:</span>
+                            <span className="text-blue-800">{formatDate(selectedPost.updated_at)}</span>
+                          </div>
+                        )}
+                        {selectedPost.submitted_for_approval_at && (
+                          <div className="flex justify-between">
+                            <span className="text-blue-600">تاريخ الإرسال للموافقة:</span>
+                            <span className="text-blue-800">{formatDate(selectedPost.submitted_for_approval_at)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-blue-600">الحالة الحالية:</span>
+                          <span>{getStatusBadge(selectedPost.status, selectedPost.is_public)}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
+                {user && user.role_name === 'content_writer' && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={toggleMySubmissions}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                        showMySubmissions
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
+                      }`}
+                    >
+                      {showMySubmissions ? (
+                        <ToggleRight className="w-5 h-5" />
+                      ) : (
+                        <ToggleLeft className="w-5 h-5" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {showMySubmissions ? 'مقالاتي' : 'الأخبار العامة'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+                
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                  title="تحديث"
+                >
+                  <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+                
+                <div className="text-sm text-gray-600">
+                  {filteredPosts.length} مقال
+                </div>
               </div>
             </div>
           </div>
