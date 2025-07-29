@@ -14,41 +14,10 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [requestedRoleId, setRequestedRoleId] = useState<string>('');
-  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Load available roles when component mounts
-  React.useEffect(() => {
-    const loadRoles = async () => {
-      setRolesLoading(true);
-      try {
-        const roles = await authService.getAllRoles();
-        setAvailableRoles(roles);
-        
-        // Set default role to 'family_member' if available
-        const defaultRole = roles.find(role => role.name === 'family_member');
-        if (defaultRole) {
-          setRequestedRoleId(defaultRole.id);
-        } else if (roles.length > 0) {
-          setRequestedRoleId(roles[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading roles:', error);
-        setError('فشل في تحميل الأدوار المتاحة');
-      } finally {
-        setRolesLoading(false);
-      }
-    };
-
-    if (mode === 'signup') {
-      loadRoles();
-    }
-  }, [mode]);
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -76,11 +45,6 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
       return false;
     }
     
-    if (mode === 'signup' && !requestedRoleId.trim()) {
-      setError('يرجى اختيار نوع العضوية');
-      return false;
-    }
-    
     return true;
   };
 
@@ -98,21 +62,16 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
     try {
       if (mode === 'signup') {
         // Sign up new user
-        const result = await authService.signUp(email, password, fullName, requestedRoleId);
+        const result = await authService.signUp(email, password, fullName);
         
         if (result.user) {
-          setSuccess('تم إنشاء الحساب بنجاح! يرجى انتظار الموافقة من المدير.');
+          setSuccess('تم إنشاء الحساب بنجاح! سيقوم أمين العائلة بمراجعة طلبك وتحديد صلاحياتك.');
           // Don't call onSuccess here as the user needs approval
           
           // Clear form
           setEmail('');
           setPassword('');
           setFullName('');
-          // Reset to default role
-          const defaultRole = availableRoles.find(role => role.name === 'family_member');
-          if (defaultRole) {
-            setRequestedRoleId(defaultRole.id);
-          }
           
           // Switch to login mode after a delay
           setTimeout(() => {
@@ -130,17 +89,17 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           if (user) {
             // Check approval status
             if (user.approval_status === 'pending') {
-              setError('حسابك قيد المراجعة. يرجى انتظار الموافقة من المدير.');
+              setError('حسابك قيد المراجعة. يرجى انتظار الموافقة من أمين العائلة.');
               return;
             } else if (user.approval_status === 'rejected') {
-              setError('تم رفض طلب حسابك. يرجى التواصل مع المدير.');
+              setError('تم رفض طلب حسابك. يرجى التواصل مع أمين العائلة.');
               return;
             } else if (user.approval_status === 'approved') {
               setSuccess('تم تسجيل الدخول بنجاح!');
               onSuccess(user);
             }
           } else {
-            throw new Error('لم يتم العثور على ملف المستخدم. يرجى التواصل مع المدير.');
+            throw new Error('لم يتم العثور على ملف المستخدم. يرجى التواصل مع أمين العائلة.');
           }
         }
       }
@@ -155,7 +114,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
       } else if (err.message?.includes('Email not confirmed')) {
         setError('يرجى تأكيد البريد الإلكتروني أولاً');
       } else if (err.message?.includes('لم يتم العثور على ملف المستخدم')) {
-        setError('لم يتم العثور على ملف المستخدم. يرجى التواصل مع المدير.');
+        setError('لم يتم العثور على ملف المستخدم. يرجى التواصل مع أمين العائلة.');
       } else {
         setError(err.message || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
       }
@@ -183,7 +142,7 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           <p className="text-gray-600">
             {mode === 'login' 
               ? 'أدخل بياناتك للوصول إلى النظام' 
-              : 'املأ البيانات لإنشاء حساب جديد'
+              : 'املأ البيانات الأساسية لإنشاء حساب جديد'
             }
           </p>
         </div>
@@ -257,45 +216,15 @@ export default function AuthForm({ mode, onSuccess, onCancel, onSwitchMode }: Au
           </div>
 
           {mode === 'signup' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع العضوية المطلوبة
-              </label>
-              {rolesLoading ? (
-                <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 flex items-center justify-center">
-                  <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                  <span className="text-gray-600">جاري تحميل الأدوار...</span>
-                </div>
-              ) : (
-                <select
-                  value={requestedRoleId}
-                  onChange={(e) => setRequestedRoleId(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  disabled={availableRoles.length === 0}
-                >
-                  <option value="">اختر نوع العضوية</option>
-                  {availableRoles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name === 'family_member' && 'عضو عائلة (Basic family member)'}
-                      {role.name === 'content_writer' && 'كاتب محتوى (Content writer)'}
-                      {role.name === 'level_manager' && 'مدير فرع (Branch manager)'}
-                      {role.name === 'family_secretary' && 'أمين العائلة (Family secretary)'}
-                      {role.name === 'viewer' && 'مشاهد (Viewer - legacy)'}
-                      {role.name === 'editor' && 'محرر (Editor - legacy)'}
-                      {role.name === 'admin' && 'مدير (Admin - legacy)'}
-                      {!['family_member', 'content_writer', 'level_manager', 'family_secretary', 'viewer', 'editor', 'admin'].includes(role.name) && role.description}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                سيتم مراجعة طلبك وتحديد الصلاحيات النهائية من قبل مدير النظام
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">ملاحظة هامة</span>
+              </div>
+              <p className="text-xs text-blue-700">
+                سيقوم أمين العائلة بمراجعة طلبك وتحديد الصلاحيات المناسبة لك بناءً على دورك في العائلة.
+                ستتلقى إشعاراً عبر البريد الإلكتروني عند الموافقة على حسابك.
               </p>
-              {availableRoles.length === 0 && !rolesLoading && (
-                <p className="text-xs text-red-500 mt-1">
-                  فشل في تحميل الأدوار المتاحة. يرجى إعادة تحميل الصفحة.
-                </p>
-              )}
             </div>
           )}
 
