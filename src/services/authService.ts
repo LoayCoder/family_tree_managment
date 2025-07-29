@@ -144,22 +144,29 @@ export const authService = {
           'Session from session_id claim in JWT does not exist',
           'Invalid Refresh Token',
           'Auth session missing',
-          'session_not_found'
+          'session_not_found',
+          'Session from session_id claim in JWT does not exist'
         ];
         
         const isSessionError = sessionErrors.some(sessionError => 
-          error.message?.includes(sessionError) || error.code?.includes(sessionError)
+          error.message?.includes(sessionError) || 
+          error.code?.includes(sessionError) ||
+          error.code === 'session_not_found'
         );
         
         if (isSessionError) {
           console.warn('Session already invalid during logout:', error.message);
           // Don't throw error - allow logout to complete gracefully
+          return; // Exit gracefully without throwing
         } else {
+          console.error('Error signing out:', error);
           throw error;
         }
       }
     } catch (error) {
-      console.error('Error signing out:', error);
+      // This catch block now only handles non-session related errors
+      // Session errors are handled in the inner try-catch above
+      console.error('Unexpected error during sign out:', error);
       throw error;
     }
   },
