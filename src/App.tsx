@@ -12,6 +12,7 @@ import LandingPage from './components/LandingPage';
 import AuthForm from './components/AuthForm';
 import AdminPanel from './components/AdminPanel';
 import NewsPage from './components/NewsPage';
+import NewsPostForm from './components/DataEntry/NewsPostForm';
 import { authService, AuthUser } from './services/authService';
 import ResponsiveHeader from './components/responsive/ResponsiveHeader';
 import ResponsiveFooter from './components/responsive/ResponsiveFooter';
