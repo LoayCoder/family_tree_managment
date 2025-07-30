@@ -85,11 +85,18 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
 
       if (error) throw error;
 
+      // Debug logging to see what data is being returned
+      console.log('Raw data from Supabase:', data);
+      console.log('User info:', user);
+      console.log('Show my submissions:', showMySubmissions);
+
       // Format the data
       const formattedPosts = data?.map(post => ({
         ...post,
         author: post.user_profiles
       })) || [];
+
+      console.log('Formatted posts:', formattedPosts);
 
       setNewsPosts(formattedPosts);
 
