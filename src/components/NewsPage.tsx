@@ -81,10 +81,9 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
             .eq('is_public', true);
         }
       } else {
-        // Other authenticated users: only public published posts
+        // Other authenticated users (family_member, viewer, etc.): published posts (both public and family-only)
         query = query
-          .eq('status', 'published')
-          .eq('is_public', true);
+          .eq('status', 'published');
       }
 
       // Retry logic for connection issues
