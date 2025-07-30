@@ -45,7 +45,7 @@ export const authService = {
 
       const sessionPromise = supabase.auth.getSession();
       
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
       if (!session?.user) {
         return null;
       }
@@ -171,7 +171,7 @@ export const authService = {
           'Invalid Refresh Token',
           'Auth session missing',
           'session_not_found',
-          'Session from session_id claim in JWT does not exist',
+          'session_not_found',
           'The message port closed before a response was received'
         ];
         
