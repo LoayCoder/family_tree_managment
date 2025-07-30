@@ -42,11 +42,18 @@ function App() {
     let authListener: { subscription: { unsubscribe: () => void } } | null = null;
     
     if (authService.supabase) {
+      // Add error handling for auth state changes
       const { data } = authService.supabase.auth.onAuthStateChange(
-        (_event, session) => {
+        (event, session) => {
           // This listener will automatically update the session and refresh tokens
           // No explicit action needed here, just ensuring the session is managed
-          checkUser(); // Re-check user status on auth state change
+          try {
+            console.log('Auth state changed:', event);
+            checkUser(); // Re-check user status on auth state change
+          } catch (error) {
+            console.error('Error in auth state change handler:', error);
+            // Don't throw error, just log it
+          }
         }
       );
       authListener = { subscription: data.subscription };
@@ -54,8 +61,13 @@ function App() {
 
     checkUser();
     return () => {
-      if (authListener) {
-        authListener.subscription.unsubscribe();
+      try {
+        if (authListener) {
+          authListener.subscription.unsubscribe();
+        }
+      } catch (error) {
+        console.warn('Error unsubscribing from auth listener:', error);
+        // Don't throw error during cleanup
       }
     };
   }, []);
@@ -64,7 +76,28 @@ function App() {
   const checkUser = async () => {
     try {
       setLoading(true);
-      const currentUser = await authService.getCurrentUser();
+      
+      // Add retry logic for connection issues
+      let retries = 3;
+      let currentUser = null;
+      
+      while (retries > 0 && !currentUser) {
+        try {
+          currentUser = await authService.getCurrentUser();
+          break;
+        } catch (error) {
+          retries--;
+          if (error.message?.includes('message port closed') || 
+              error.message?.includes('timeout')) {
+            console.warn(`Connection issue, retrying... (${retries} attempts left)`);
+            if (retries > 0) {
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+              continue;
+            }
+          }
+          throw error;
+        }
+      }
       
       if (currentUser) {
         setUser(currentUser);
@@ -73,7 +106,12 @@ function App() {
       }
     } catch (error) {
       console.error('Error checking user:', error);
-      setUser(null);
+      // Only set user to null if it's not a connection issue
+      if (!error.message?.includes('message port closed') && 
+          !error.message?.includes('timeout')) {
+        setUser(null);
+      }
+      // For connection issues, keep the current user state
     } finally {
       setLoading(false);
     }

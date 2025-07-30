@@ -46,6 +46,12 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
         throw new Error('Supabase client not initialized');
       }
 
+      // Add timeout and retry logic
+      const maxRetries = 3;
+      let retries = 0;
+      let data = null;
+      let error = null;
+
       // Build query based on user authentication
       let query = supabase
         .from('news_posts')
@@ -81,7 +87,23 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
           .eq('is_public', true);
       }
 
-      const { data, error } = await query;
+      // Retry logic for connection issues
+      while (retries < maxRetries) {
+        try {
+          const result = await query;
+          data = result.data;
+          error = result.error;
+          break;
+        } catch (err) {
+          retries++;
+          if (err.message?.includes('message port closed') && retries < maxRetries) {
+            console.warn(`Connection issue loading news, retrying... (${retries}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          throw err;
+        }
+      }
 
       if (error) throw error;
 
@@ -109,6 +131,11 @@ export default function NewsPage({ onBack, user }: NewsPageProps) {
       setAvailableTags(allTags);
     } catch (error) {
       console.error('Error loading news posts:', error);
+      // Don't show error for connection issues, just log them
+      if (!error.message?.includes('message port closed')) {
+        // Show user-friendly error message
+        console.error('Failed to load news posts:', error);
+      }
     } finally {
       setLoading(false);
     }

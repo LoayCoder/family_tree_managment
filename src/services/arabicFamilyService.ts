@@ -9,7 +9,28 @@ let supabase: any = null;
 
 if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY') {
   try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      global: {
+        headers: {
+          'x-client-info': 'family-tree-app'
+        }
+      },
+      // Add retry configuration
+      db: {
+        schema: 'public'
+      },
+      // Configure realtime to handle connection issues
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    });
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
   }

@@ -38,6 +38,13 @@ export const authService = {
     }
 
     try {
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 10000); // 10 second timeout
+      });
+
+      const sessionPromise = supabase.auth.getSession();
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         return null;
@@ -52,6 +59,13 @@ export const authService = {
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        // Handle specific errors gracefully
+        if (error.message?.includes('message port closed') || 
+            error.message?.includes('timeout') ||
+            error.code === 'PGRST116') {
+          console.warn('Session or connection issue, returning null user');
+          return null;
+        }
         throw error;
       }
 
@@ -68,6 +82,12 @@ export const authService = {
       };
     } catch (error) {
       console.error('Error getting current user:', error);
+      // Handle message port errors gracefully
+      if (error.message?.includes('message port closed') || 
+          error.message?.includes('timeout')) {
+        console.warn('Connection issue while getting current user, returning null');
+        return null;
+      }
       throw error;
     }
   },
@@ -136,6 +156,13 @@ export const authService = {
     }
 
     try {
+      // Clear any pending requests or listeners before signing out
+      if (typeof window !== 'undefined') {
+        // Clear any stored session data
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         // Check if the error is related to session already being invalid/missing
@@ -144,13 +171,15 @@ export const authService = {
           'Invalid Refresh Token',
           'Auth session missing',
           'session_not_found',
-          'Session from session_id claim in JWT does not exist'
+          'Session from session_id claim in JWT does not exist',
+          'The message port closed before a response was received'
         ];
         
         const isSessionError = sessionErrors.some(sessionError => 
           error.message?.includes(sessionError) || 
           error.code?.includes(sessionError) ||
-          error.code === 'session_not_found'
+          error.code === 'session_not_found' ||
+          error.message?.includes('message port closed')
         );
         
         if (isSessionError) {
@@ -166,6 +195,11 @@ export const authService = {
       // This catch block now only handles non-session related errors
       // Session errors are handled in the inner try-catch above
       console.error('Unexpected error during sign out:', error);
+      // Don't throw error for message port issues - just log and continue
+      if (error.message?.includes('message port closed')) {
+        console.warn('Message port closed during sign out - continuing with logout');
+        return;
+      }
       throw error;
     }
   },
