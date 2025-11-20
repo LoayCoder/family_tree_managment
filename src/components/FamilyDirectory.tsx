@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Users, ChevronDown, ChevronRight, User, Calendar, Phone, Heart, Skull, Baby } from 'lucide-react';
 import { FamilyMemberWithLevel } from '../types/FamilyMember';
 import { familyService } from '../services/supabase';
+import ResponsiveContainer from './responsive/ResponsiveContainer';
+import ResponsiveText from './responsive/ResponsiveText';
 
 interface FamilyDirectoryProps {
   refreshTrigger: number;
@@ -122,228 +124,75 @@ export default function FamilyDirectory({ refreshTrigger }: FamilyDirectoryProps
 
   if (loading) {
     return (
-      <div className="family-directory-loading">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <span>جاري تحميل دليل العائلة...</span>
+      <ResponsiveContainer>
+        <div className="bg-white rounded-2xl shadow-xl p-12 border border-gray-100 text-center">
+          <div className="flex items-center justify-center gap-3 text-lg font-medium text-gray-600">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>جاري تحميل دليل آل عمير...</span>
+          </div>
         </div>
-      </div>
+      </ResponsiveContainer>
     );
   }
 
   return (
-    <div className="family-directory">
-      {/* Header */}
-      <div className="directory-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <Users className="icon" />
+    <ResponsiveContainer>
+      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100 transition-all duration-300">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl shadow-md">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div>
+              <ResponsiveText as="h2" size="2xl" weight="bold" color="gray-800">
+                دليل آل عمير التفاعلي
+              </ResponsiveText>
+              <ResponsiveText size="sm" color="gray-600">
+                عدد الأعضاء: {members.reduce((total, member) => total + 1 + member.childrenCount, 0)}
+              </ResponsiveText>
+            </div>
           </div>
-          <div className="header-text">
-            <h2>دليل العائلة التفاعلي</h2>
-            <p>عدد الأعضاء: {members.reduce((total, member) => total + 1 + member.childrenCount, 0)}</p>
-          </div>
-        </div>
-        
-        {/* Search */}
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="البحث في دليل العائلة..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-      </div>
-
-      {/* Family Cards */}
-      <div className="family-cards-container">
-        {filteredMembers.length === 0 ? (
-          <div className="empty-state">
-            <Users className="empty-icon" />
-            <h3>لا توجد نتائج</h3>
-            <p>لم يتم العثور على أعضاء يطابقون البحث</p>
-          </div>
-        ) : (
-          filteredMembers.map((member) => (
-            <FamilyMemberCard
-              key={member.id}
-              member={member}
-              isExpanded={expandedCards.has(member.id)}
-              onToggleExpansion={() => toggleCardExpansion(member.id)}
-              formatDate={formatDate}
-              calculateAge={calculateAge}
+          
+          {/* Search */}
+          <div className="w-full sm:w-auto max-w-md">
+            <input
+              type="text"
+              placeholder="البحث في دليل آل عمير..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all"
             />
-          ))
-        )}
+          </div>
+        </div>
+
+        {/* Family Cards */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {filteredMembers.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-gray-600">
+              <Users className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-300 mb-2" />
+              <ResponsiveText as="h3" size="xl" weight="semibold" color="gray-600" className="mb-2">
+                لا توجد نتائج
+              </ResponsiveText>
+              <ResponsiveText size="base" color="gray-500">
+                لم يتم العثور على أعضاء يطابقون البحث
+              </ResponsiveText>
+            </div>
+          ) : (
+            filteredMembers.map((member) => (
+              <FamilyMemberCard
+                key={member.id}
+                member={member}
+                isExpanded={expandedCards.has(member.id)}
+                onToggleExpansion={() => toggleCardExpansion(member.id)}
+                formatDate={formatDate}
+                calculateAge={calculateAge}
+              />
+            ))
+          )}
+        </div>
       </div>
-
-      <style jsx>{`
-        .family-directory {
-          background: white;
-          border-radius: 24px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          padding: 32px;
-          border: 1px solid #f3f4f6;
-        }
-
-        .family-directory-loading {
-          background: white;
-          border-radius: 24px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-          padding: 48px;
-          border: 1px solid #f3f4f6;
-        }
-
-        .loading-spinner {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          font-size: 18px;
-          font-weight: 500;
-          color: #6b7280;
-        }
-
-        .spinner {
-          width: 32px;
-          height: 32px;
-          border: 4px solid #10b981;
-          border-top: 4px solid transparent;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .directory-header {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          margin-bottom: 32px;
-        }
-
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .header-icon {
-          padding: 12px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
-        }
-
-        .header-icon .icon {
-          width: 24px;
-          height: 24px;
-          color: white;
-        }
-
-        .header-text h2 {
-          font-size: 28px;
-          font-weight: 700;
-          color: #1f2937;
-          margin: 0 0 4px 0;
-        }
-
-        .header-text p {
-          color: #6b7280;
-          margin: 0;
-        }
-
-        .search-container {
-          position: relative;
-          max-width: 400px;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 16px 20px;
-          border: 2px solid #e5e7eb;
-          border-radius: 16px;
-          font-size: 16px;
-          transition: all 0.2s ease;
-          background: #f9fafb;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #10b981;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-
-        .family-cards-container {
-          display: grid;
-          gap: 24px;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 48px 24px;
-          color: #6b7280;
-        }
-
-        .empty-icon {
-          width: 64px;
-          height: 64px;
-          margin: 0 auto 16px;
-          color: #d1d5db;
-        }
-
-        .empty-state h3 {
-          font-size: 20px;
-          font-weight: 600;
-          margin: 0 0 8px 0;
-        }
-
-        .empty-state p {
-          margin: 0;
-        }
-
-        /* Responsive Design */
-        @media (min-width: 768px) {
-          .directory-header {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .family-cards-container {
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .family-cards-container {
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-          }
-        }
-
-        @media (max-width: 640px) {
-          .family-directory {
-            padding: 20px;
-            border-radius: 16px;
-          }
-
-          .header-text h2 {
-            font-size: 24px;
-          }
-
-          .search-input {
-            padding: 12px 16px;
-            font-size: 14px;
-          }
-        }
-      `}</style>
-    </div>
+    </ResponsiveContainer>
   );
 }
 
@@ -363,148 +212,152 @@ function FamilyMemberCard({
   calculateAge 
 }: FamilyMemberCardProps) {
   const getStatusColor = (isAlive: boolean | undefined) => {
-    if (isAlive === false) return 'status-deceased';
-    return 'status-alive';
-  };
-
-  const getGenderIcon = (gender: string | null) => {
-    return <User className="gender-icon" />;
+    if (isAlive === false) return 'bg-gray-100 text-gray-700 border-gray-200';
+    return 'bg-green-100 text-green-700 border-green-200';
   };
 
   return (
-    <div className={`member-card ${member.is_alive === false ? 'deceased' : 'alive'}`}>
+    <div className={`bg-white rounded-3xl border-2 border-gray-100 overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-0.5 ${
+      member.is_alive === false ? 'opacity-95 bg-gradient-to-br from-gray-50 to-white' : 'bg-gradient-to-br from-white to-gray-50'
+    }`}>
       {/* Card Header */}
-      <div className="card-header" onClick={onToggleExpansion}>
-        <div className="member-info">
-          <div className="avatar">
-            <User className="avatar-icon" />
-          </div>
-          <div className="member-details">
-            <h3 className="member-name">{member.name}</h3>
-            <div className="member-meta">
-              <span className={`status-badge ${getStatusColor(member.is_alive)}`}>
-                {member.is_alive === false ? (
-                  <>
-                    <Skull className="status-icon" />
-                    متوفى
-                  </>
-                ) : (
-                  <>
-                    <Heart className="status-icon" />
-                    على قيد الحياة
-                  </>
-                )}
-              </span>
-              <span className="age-badge">
-                <Calendar className="age-icon" />
-                {calculateAge(member.birth_date, member.date_of_death)}
-              </span>
+      <div className="p-5 cursor-pointer transition-colors duration-200 hover:bg-gray-50" onClick={onToggleExpansion}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center shadow-lg flex-shrink-0">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">{member.name}</h3>
+              <div className="flex gap-3 flex-wrap">
+                <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(member.is_alive)}`}>
+                  {member.is_alive === false ? (
+                    <>
+                      <Skull className="w-4 h-4" />
+                      متوفى
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="w-4 h-4" />
+                      على قيد الحياة
+                    </>
+                  )}
+                </span>
+                <span className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                  <Calendar className="w-4 h-4" />
+                  {calculateAge(member.birth_date, member.date_of_death)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="card-actions">
-          {member.childrenCount > 0 && (
-            <div className="children-badge">
-              <Baby className="children-icon" />
-              <span className="children-count">{member.childrenCount}</span>
-            </div>
-          )}
-          <button className="expand-button" aria-label={isExpanded ? 'طي' : 'توسيع'}>
-            {isExpanded ? (
-              <ChevronDown className="expand-icon" />
-            ) : (
-              <ChevronRight className="expand-icon" />
+          <div className="flex items-center gap-3">
+            {member.childrenCount > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold border border-yellow-200">
+                <Baby className="w-4 h-4" />
+                <span>{member.childrenCount}</span>
+              </div>
             )}
-          </button>
+            <button className="w-10 h-10 rounded-xl border-2 border-gray-200 bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-green-500 hover:bg-green-50" aria-label={isExpanded ? 'طي' : 'توسيع'}>
+              {isExpanded ? (
+                <ChevronDown className="w-5 h-5 text-gray-600 transition-transform duration-200" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-gray-600 transition-transform duration-200" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Expanded Content */}
-      <div className={`card-content ${isExpanded ? 'expanded' : 'collapsed'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ${
+        isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+      }`}>
         {/* Member Details */}
-        <div className="member-expanded-info">
-          <div className="info-grid">
+        <div className="px-5 pb-5 border-t border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
             {member.birth_date && (
-              <div className="info-item">
-                <Calendar className="info-icon" />
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <Calendar className="w-5 h-5 text-gray-600 flex-shrink-0" />
                 <div>
-                  <span className="info-label">تاريخ الميلاد</span>
-                  <span className="info-value">{formatDate(member.birth_date)}</span>
+                  <span className="block text-sm text-gray-600 font-medium">تاريخ الميلاد</span>
+                  <span className="block text-sm text-gray-800 font-semibold">{formatDate(member.birth_date)}</span>
                 </div>
               </div>
             )}
             
             {member.phone && (
-              <div className="info-item">
-                <Phone className="info-icon" />
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <Phone className="w-5 h-5 text-gray-600 flex-shrink-0" />
                 <div>
-                  <span className="info-label">الهاتف</span>
-                  <span className="info-value" dir="ltr">{member.phone}</span>
+                  <span className="block text-sm text-gray-600 font-medium">الهاتف</span>
+                  <span className="block text-sm text-gray-800 font-semibold" dir="ltr">{member.phone}</span>
                 </div>
               </div>
             )}
 
             {member.gender && (
-              <div className="info-item">
-                {getGenderIcon(member.gender)}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <User className="w-5 h-5 text-gray-600 flex-shrink-0" />
                 <div>
-                  <span className="info-label">الجنس</span>
-                  <span className="info-value">{member.gender}</span>
+                  <span className="block text-sm text-gray-600 font-medium">الجنس</span>
+                  <span className="block text-sm text-gray-800 font-semibold">{member.gender}</span>
                 </div>
               </div>
             )}
 
             {member.is_alive === false && member.date_of_death && (
-              <div className="info-item death-info">
-                <Skull className="info-icon" />
+              <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-xl border border-gray-200">
+                <Skull className="w-5 h-5 text-gray-600 flex-shrink-0" />
                 <div>
-                  <span className="info-label">تاريخ الوفاة</span>
-                  <span className="info-value">{formatDate(member.date_of_death)}</span>
+                  <span className="block text-sm text-gray-600 font-medium">تاريخ الوفاة</span>
+                  <span className="block text-sm text-gray-800 font-semibold">{formatDate(member.date_of_death)}</span>
                 </div>
               </div>
             )}
           </div>
 
           {member.notes && (
-            <div className="notes-section">
-              <h4>ملاحظات</h4>
-              <p>{member.notes}</p>
+            <div className="mt-5 p-4 bg-yellow-50 rounded-2xl border border-yellow-200">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-2">ملاحظات</h4>
+              <p className="text-sm text-yellow-700 leading-relaxed">{member.notes}</p>
             </div>
           )}
         </div>
 
         {/* Children Section */}
         {member.children.length > 0 && (
-          <div className="children-section">
-            <h4 className="children-title">
-              <Baby className="children-title-icon" />
+          <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50">
+            <h4 className="flex items-center gap-2 mt-5 mb-4 text-base font-semibold text-gray-800">
+              <Baby className="w-5 h-5 text-green-600" />
               الأطفال ({member.children.length})
             </h4>
-            <div className="children-grid">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {member.children.map((child) => (
-                <div key={child.id} className="child-card">
-                  <div className="child-header">
-                    <div className="child-avatar">
-                      <User className="child-avatar-icon" />
+                <div key={child.id} className="bg-white rounded-xl p-3 border border-gray-200 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-base font-semibold text-gray-800 mb-1 truncate">{child.name}</h5>
+                        <span className="text-sm text-gray-600">
+                          {calculateAge(child.birth_date, child.date_of_death)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="child-info">
-                      <h5 className="child-name">{child.name}</h5>
-                      <span className="child-age">
-                        {calculateAge(child.birth_date, child.date_of_death)}
-                      </span>
-                    </div>
-                    <span className={`child-status ${getStatusColor(child.is_alive)}`}>
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${getStatusColor(child.is_alive)}`}>
                       {child.is_alive === false ? (
-                        <Skull className="child-status-icon" />
+                        <Skull className="w-4 h-4" />
                       ) : (
-                        <Heart className="child-status-icon" />
+                        <Heart className="w-4 h-4" />
                       )}
                     </span>
                   </div>
                   {child.phone && (
-                    <div className="child-contact">
-                      <Phone className="child-contact-icon" />
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600">
+                      <Phone className="w-3.5 h-3.5" />
                       <span dir="ltr">{child.phone}</span>
                     </div>
                   )}
@@ -514,407 +367,6 @@ function FamilyMemberCard({
           </div>
         )}
       </div>
-
-      <style jsx>{`
-        .member-card {
-          background: white;
-          border-radius: 20px;
-          border: 2px solid #f3f4f6;
-          overflow: hidden;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .member-card:hover {
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          transform: translateY(-2px);
-        }
-
-        .member-card.deceased {
-          border-color: #e5e7eb;
-          background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-        }
-
-        .card-header {
-          padding: 24px;
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          transition: background-color 0.2s ease;
-        }
-
-        .card-header:hover {
-          background: #f9fafb;
-        }
-
-        .member-info {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex: 1;
-        }
-
-        .avatar {
-          width: 56px;
-          height: 56px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
-        }
-
-        .avatar-icon {
-          width: 28px;
-          height: 28px;
-          color: white;
-        }
-
-        .member-details {
-          flex: 1;
-        }
-
-        .member-name {
-          font-size: 20px;
-          font-weight: 700;
-          color: #1f2937;
-          margin: 0 0 8px 0;
-        }
-
-        .member-meta {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .status-badge, .age-badge {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .status-badge.status-alive {
-          background: #dcfce7;
-          color: #166534;
-          border: 1px solid #bbf7d0;
-        }
-
-        .status-badge.status-deceased {
-          background: #f3f4f6;
-          color: #374151;
-          border: 1px solid #d1d5db;
-        }
-
-        .age-badge {
-          background: #dbeafe;
-          color: #1e40af;
-          border: 1px solid #bfdbfe;
-        }
-
-        .status-icon, .age-icon {
-          width: 12px;
-          height: 12px;
-        }
-
-        .card-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .children-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
-          background: #fef3c7;
-          color: #92400e;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 600;
-          border: 1px solid #fde68a;
-        }
-
-        .children-icon {
-          width: 16px;
-          height: 16px;
-        }
-
-        .expand-button {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          border: 2px solid #e5e7eb;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .expand-button:hover {
-          border-color: #10b981;
-          background: #f0fdf4;
-        }
-
-        .expand-icon {
-          width: 20px;
-          height: 20px;
-          color: #6b7280;
-          transition: transform 0.2s ease;
-        }
-
-        .card-content {
-          overflow: hidden;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .card-content.collapsed {
-          max-height: 0;
-          opacity: 0;
-        }
-
-        .card-content.expanded {
-          max-height: 2000px;
-          opacity: 1;
-        }
-
-        .member-expanded-info {
-          padding: 0 24px 24px;
-          border-top: 1px solid #f3f4f6;
-          margin-top: 0;
-        }
-
-        .info-grid {
-          display: grid;
-          gap: 16px;
-          margin-top: 20px;
-        }
-
-        .info-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px;
-          background: #f9fafb;
-          border-radius: 12px;
-          border: 1px solid #f3f4f6;
-        }
-
-        .info-item.death-info {
-          background: #fafafa;
-          border-color: #e5e7eb;
-        }
-
-        .info-icon {
-          width: 20px;
-          height: 20px;
-          color: #6b7280;
-          flex-shrink: 0;
-        }
-
-        .info-label {
-          display: block;
-          font-size: 12px;
-          color: #6b7280;
-          font-weight: 500;
-        }
-
-        .info-value {
-          display: block;
-          font-size: 14px;
-          color: #1f2937;
-          font-weight: 600;
-        }
-
-        .notes-section {
-          margin-top: 20px;
-          padding: 16px;
-          background: #fffbeb;
-          border-radius: 12px;
-          border: 1px solid #fde68a;
-        }
-
-        .notes-section h4 {
-          margin: 0 0 8px 0;
-          font-size: 14px;
-          font-weight: 600;
-          color: #92400e;
-        }
-
-        .notes-section p {
-          margin: 0;
-          font-size: 14px;
-          color: #78350f;
-          line-height: 1.5;
-        }
-
-        .children-section {
-          padding: 24px;
-          border-top: 1px solid #f3f4f6;
-          background: #fafafa;
-        }
-
-        .children-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin: 0 0 16px 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: #1f2937;
-        }
-
-        .children-title-icon {
-          width: 20px;
-          height: 20px;
-          color: #10b981;
-        }
-
-        .children-grid {
-          display: grid;
-          gap: 12px;
-        }
-
-        .child-card {
-          background: white;
-          border-radius: 12px;
-          padding: 16px;
-          border: 1px solid #e5e7eb;
-          transition: all 0.2s ease;
-        }
-
-        .child-card:hover {
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transform: translateY(-1px);
-        }
-
-        .child-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .child-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .child-avatar-icon {
-          width: 20px;
-          height: 20px;
-          color: white;
-        }
-
-        .child-info {
-          flex: 1;
-        }
-
-        .child-name {
-          font-size: 16px;
-          font-weight: 600;
-          color: #1f2937;
-          margin: 0 0 4px 0;
-        }
-
-        .child-age {
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .child-status {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .child-status.status-alive {
-          background: #dcfce7;
-        }
-
-        .child-status.status-deceased {
-          background: #f3f4f6;
-        }
-
-        .child-status-icon {
-          width: 16px;
-          height: 16px;
-        }
-
-        .child-contact {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 12px;
-          padding-top: 12px;
-          border-top: 1px solid #f3f4f6;
-          font-size: 14px;
-          color: #6b7280;
-        }
-
-        .child-contact-icon {
-          width: 16px;
-          height: 16px;
-        }
-
-        /* Responsive Design */
-        @media (min-width: 640px) {
-          .info-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .children-grid {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          }
-        }
-
-        @media (max-width: 640px) {
-          .card-header {
-            padding: 16px;
-          }
-
-          .member-expanded-info {
-            padding: 0 16px 16px;
-          }
-
-          .children-section {
-            padding: 16px;
-          }
-
-          .member-name {
-            font-size: 18px;
-          }
-
-          .member-meta {
-            gap: 8px;
-          }
-
-          .avatar {
-            width: 48px;
-            height: 48px;
-          }
-
-          .avatar-icon {
-            width: 24px;
-            height: 24px;
-          }
-        }
-      `}</style>
     </div>
   );
 }
