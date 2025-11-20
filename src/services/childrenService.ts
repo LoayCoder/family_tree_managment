@@ -200,5 +200,37 @@ export const childrenService = {
       console.error('Error fetching children count:', error);
       return 0;
     }
+  },
+
+  // Get women related to a person (wives, daughters)
+  async getRelatedWomen(personId: number): Promise<any[]> {
+    if (!supabase) {
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('ارتباط_النساء')
+        .select(`
+          id,
+          woman_id,
+          نوع_الارتباط,
+          النساء!inner(
+            id,
+            الاسم_الأول,
+            اسم_الأب,
+            اسم_العائلة,
+            تاريخ_الميلاد,
+            تاريخ_الوفاة
+          )
+        `)
+        .eq('person_id', personId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching related women:', error);
+      return [];
+    }
   }
 };
